@@ -1,10 +1,10 @@
 -- =========================================================
--- Blog schema for Supabase (Postgres)
--- Assumes Supabase's built-in `auth.users` table for identity.
--- Run this in the Supabase SQL editor, or via `supabase db push`.
+-- NOTE: Uses Supabase's built-in `auth.users` table for identity.
 -- =========================================================
 
 create extension if not exists pgcrypto; -- for gen_random_uuid()
+
+create type post_status as enum ('draft', 'published');
 
 -- ---------------------------------------------------------
 -- POSTS
@@ -15,20 +15,13 @@ create table posts (
 
   title              text not null,
   slug               text not null unique,
-  excerpt            text,
 
-  content_md         text not null default '',
-  content_html       text not null default '', -- rendered server-side on save/publish
+  content_md         text not null default '', -- stored exactly as received
 
-  status             text not null default 'draft'
-                        check (status in ('draft', 'scheduled', 'published')),
-  published_at       timestamptz,               -- set on publish; future = scheduled
+  status             post_status not null default 'draft',
+  published_at       timestamptz,               -- set when published
 
-  seo_description    text,
-  og_image_url       text,
-  reading_time_min   int,
-
-  preview_token      uuid not null default gen_random_uuid(), -- share unpublished drafts
+  thumbnail_url      text,
 
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now(),
@@ -53,7 +46,7 @@ create trigger trg_posts_updated_at
   for each row execute function set_updated_at();
 
 -- ---------------------------------------------------------
--- POST REVISIONS  (insert-only history, cheap now / painful to add later)
+-- POST REVISIONS
 -- ---------------------------------------------------------
 create table post_revisions (
   id            uuid primary key default gen_random_uuid(),
@@ -115,73 +108,3 @@ create table media (
   content_type  text,
   created_at    timestamptz not null default now()
 );
-
--- =========================================================
--- ROW LEVEL SECURITY
--- =========================================================
-alter table posts enable row level security;
-alter table post_revisions enable row level security;
-alter table tags enable row level security;
-alter table post_tags enable row level security;
-alter table comments enable row level security;
-alter table media enable row level security;
-
--- Anyone can read published posts; authors can read all their own (incl. drafts)
-create policy posts_select_published on posts
-  for select
-  using (
-    (status = 'published' and published_at <= now() and deleted_at is null)
-    or auth.uid() = author_id
-  );
-
--- Only the author can write/update/delete their own posts
-create policy posts_author_write on posts
-  for insert with check (auth.uid() = author_id);
-
-create policy posts_author_update on posts
-  for update using (auth.uid() = author_id);
-
-create policy posts_author_delete on posts
-  for delete using (auth.uid() = author_id);
-
--- Revisions: readable/writable only by the post's author
-create policy revisions_author_all on post_revisions
-  for all using (
-    auth.uid() = (select author_id from posts where posts.id = post_id)
-  );
-
--- Tags: readable by everyone, writable by any authenticated user
--- (tighten this to an admin role later if you want stricter control)
-create policy tags_select_all on tags for select using (true);
-create policy tags_authenticated_write on tags
-  for insert with check (auth.uid() is not null);
-
-create policy post_tags_select_all on post_tags for select using (true);
-create policy post_tags_author_write on post_tags
-  for all using (
-    auth.uid() = (select author_id from posts where posts.id = post_id)
-  );
-
--- Comments: visible comments readable by all; pending/hidden readable by
--- their own author only. Any authenticated user can post a comment.
--- Only the comment's author can edit/delete it.
-create policy comments_select on comments
-  for select using (
-    status = 'visible' or auth.uid() = author_id
-  );
-
-create policy comments_insert on comments
-  for insert with check (auth.uid() = author_id);
-
-create policy comments_author_update on comments
-  for update using (auth.uid() = author_id);
-
-create policy comments_author_delete on comments
-  for delete using (auth.uid() = author_id);
-
--- Media: uploader can manage their own rows; public read (URLs are public anyway)
-create policy media_select_all on media for select using (true);
-create policy media_uploader_write on media
-  for insert with check (auth.uid() = uploader_id);
-create policy media_uploader_delete on media
-  for delete using (auth.uid() = uploader_id);

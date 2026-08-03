@@ -29,6 +29,4 @@ anyhow = "1"
 thiserror = "1"
 dotenvy = "0.15"
  
-# Renders Markdown -> HTML server-side, GFM-compatible (tables, strikethrough, etc.)
-comrak = "0.24"
 slug = "0.1"

@@ -1,6 +1,5 @@
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
     routing::get,
     Json, Router,
 };
@@ -9,6 +8,7 @@ use uuid::Uuid;
 
 use crate::auth::AuthUser;
 use crate::models::comments::{Comment, CreateCommentRequest};
+use crate::routes::error::{RouteError, RouteResult};
 
 pub fn router() -> Router<PgPool> {
     Router::new().route(
@@ -17,12 +17,11 @@ pub fn router() -> Router<PgPool> {
     )
 }
 
-/// GET /posts/id/:post_id/comments — visible comments only (RLS also
-/// enforces this, but filtering here avoids relying solely on it).
+/// GET /posts/id/:post_id/comments — visible comments only.
 async fn list_comments(
     State(pool): State<PgPool>,
     Path(post_id): Path<Uuid>,
-) -> Result<Json<Vec<Comment>>, (StatusCode, String)> {
+) -> RouteResult<Json<Vec<Comment>>> {
     let comments = sqlx::query_as::<_, Comment>(
         r#"
         select * from comments
@@ -32,8 +31,7 @@ async fn list_comments(
     )
     .bind(post_id)
     .fetch_all(&pool)
-    .await
-    .map_err(internal_err)?;
+    .await?;
 
     Ok(Json(comments))
 }
@@ -45,9 +43,9 @@ async fn create_comment(
     user: AuthUser,
     Path(post_id): Path<Uuid>,
     Json(req): Json<CreateCommentRequest>,
-) -> Result<Json<Comment>, (StatusCode, String)> {
+) -> RouteResult<Json<Comment>> {
     if req.body.trim().is_empty() {
-        return Err((StatusCode::BAD_REQUEST, "comment body is empty".into()));
+        return Err(RouteError::bad_request("comment body is empty"));
     }
 
     let comment = sqlx::query_as::<_, Comment>(
@@ -62,13 +60,7 @@ async fn create_comment(
     .bind(req.parent_comment_id)
     .bind(&req.body)
     .fetch_one(&pool)
-    .await
-    .map_err(internal_err)?;
+    .await?;
 
     Ok(Json(comment))
-}
-
-fn internal_err(e: sqlx::Error) -> (StatusCode, String) {
-    tracing::error!("db error: {e}");
-    (StatusCode::INTERNAL_SERVER_ERROR, "internal error".into())
 }
