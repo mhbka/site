@@ -2,6 +2,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// Status of a post.
+///
+/// Put very simply, draft = not displayed publicly, published = displayed publicly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[serde(rename_all = "lowercase")]
 #[sqlx(type_name = "post_status", rename_all = "lowercase")]
@@ -10,7 +13,9 @@ pub enum PostStatus {
     Published,
 }
 
+/// Defines a blog post.
 #[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Post {
     pub id: Uuid,
     pub author_id: Uuid,
@@ -24,8 +29,9 @@ pub struct Post {
     pub updated_at: DateTime<Utc>,
 }
 
-/// Lightweight shape for listing pages — skip the post body.
+/// Summary of a post (mainly for listing posts).
 #[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct PostSummary {
     pub id: Uuid,
     pub title: String,
@@ -34,12 +40,14 @@ pub struct PostSummary {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreatePostRequest {
     pub title: String,
     pub content_md: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UpdatePostRequest {
     pub title: Option<String>,
     pub content_md: Option<String>,
@@ -48,7 +56,8 @@ pub struct UpdatePostRequest {
 
 #[cfg(test)]
 mod tests {
-    use super::PostStatus;
+    use super::{PostStatus, PostSummary, UpdatePostRequest};
+    use uuid::Uuid;
 
     #[test]
     fn serializes_status_as_lowercase() {
@@ -61,5 +70,34 @@ mod tests {
     #[test]
     fn rejects_unknown_statuses() {
         assert!(serde_json::from_str::<PostStatus>("\"scheduled\"").is_err());
+    }
+
+    #[test]
+    fn serializes_post_fields_as_camel_case() {
+        let post = PostSummary {
+            id: Uuid::nil(),
+            title: "Hello".to_string(),
+            slug: "hello".to_string(),
+            thumbnail_url: Some("https://example.test/image.png".to_string()),
+        };
+
+        let json = serde_json::to_value(post).unwrap();
+        assert_eq!(json["thumbnailUrl"], "https://example.test/image.png");
+        assert!(json.get("thumbnail_url").is_none());
+    }
+
+    #[test]
+    fn deserializes_post_requests_from_camel_case() {
+        let request: UpdatePostRequest = serde_json::from_value(serde_json::json!({
+            "contentMd": "Updated content",
+            "thumbnailUrl": "https://example.test/image.png"
+        }))
+        .unwrap();
+
+        assert_eq!(request.content_md.as_deref(), Some("Updated content"));
+        assert_eq!(
+            request.thumbnail_url.as_deref(),
+            Some("https://example.test/image.png")
+        );
     }
 }
