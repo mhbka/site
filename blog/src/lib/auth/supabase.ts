@@ -1,7 +1,7 @@
-import { createServerClient, parseCookieHeader } from "@supabase/ssr"
-import { createClient } from "@supabase/supabase-js"
+import { createBrowserClient, createServerClient, parseCookieHeader } from "@supabase/ssr"
 import type { AstroCookies } from "astro"
 
+// Server-side client, for APIs etc to use
 export const createSupabaseServerClient = (request: Request, cookies: AstroCookies) => {
   return createServerClient(
       import.meta.env.SUPABASE_URL,
@@ -19,7 +19,15 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     )
 }
 
-export const supabaseClient = createClient(
-  import.meta.env.SUPABASE_URL,
-  import.meta.env.SUPABASE_PUBLISHABLE_KEY,
-);
+// Browser-side client
+export const createSupabaseBrowserClient = () => {
+  return createBrowserClient(
+    import.meta.env.SUPABASE_URL,
+    import.meta.env.SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        flowType: 'pkce',
+      },
+    },
+  )
+}

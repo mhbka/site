@@ -1,30 +1,49 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
-
+import { createSupabaseServerClient } from '../lib/auth/supabase';
 type Props = HTMLAttributes<'button'>;
-
 const { class: className, ...props } = Astro.props;
+
+const supabaseServerClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: {user}, error } = await supabaseServerClient.auth.getUser();
+
+let buttonText;
+if (error || !user) {
+	buttonText = 'Login';
+}
+else {
+	buttonText = 'Logout';
+}
 ---
 
 <script>
-	import { supabaseClient } from "../lib/auth/supabase";
+	import { createSupabaseBrowserClient } from '../lib/auth/supabase';
 
-	const loginButton = document.getElementById('login-button')
-	loginButton?.addEventListener(
-		'click', 
-		async () => await supabaseClient.auth.signInWithOAuth({
+	const supabaseClient = createSupabaseBrowserClient();
+
+	const { data: { user }, error } = await supabaseClient.auth.getUser();
+	let buttonCallback;
+
+	if (error || !user) {
+		buttonCallback = async () => await supabaseClient.auth.signInWithOAuth({
 			provider: 'google',
-		})
-	)
+			options: {
+				redirectTo: `${window.location.origin}/api/auth/callback`
+			}
+		});
+	}
+	else {
+		buttonCallback = async () => await supabaseClient.auth.signOut();
+	}
 
-	
+	document.querySelector('[data-login-button]')?.addEventListener('click', buttonCallback);
 </script>
 
-<button id="login-button" class:list={[className]} {...props}>
-	Login
+<button data-login-button class:list={[className]} {...props}>
+	{buttonText}
 </button>
 <style>
-	a {
+	button {
 		display: inline-block;
 		text-decoration: none;
 	}
