@@ -45,6 +45,15 @@ test('returns no value for a successful delete', async () => {
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts/id/post-1');
 });
 
+test('sends requested pagination values when listing posts', async () => {
+	const mock = createFetch(Response.json([]));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.listPosts(3, 20);
+
+	assert.equal(mock.calls[0][0], 'https://api.example.test/posts?page=3&size=20');
+});
+
 test('throws an ApiError that includes the response status and body', async () => {
 	const mock = createFetch(Response.json({ error: 'post not found' }, { status: 404 }));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
