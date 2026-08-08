@@ -1,14 +1,16 @@
 ---
-import { Image } from 'astro:assets';
-import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import FetchError from '../../components/FetchError.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { blogApi } from '../../lib/api.ts';
+import { fetchResult } from '../../lib/fetch-result.ts';
 
-const posts = (await getCollection('blog')).sort(
-	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+const result = await fetchResult(
+	() => blogApi.listPosts(1, 100),
+	'We could not load the blog posts. Please try again shortly.',
 );
 ---
 
@@ -90,23 +92,25 @@ const posts = (await getCollection('blog')).sort(
 		<Header />
 		<main>
 			<section>
-				<ul>
-					{
-						posts.map((post) => (
+				{result.error ? (
+					<FetchError message={result.error} />
+				) : (
+					<ul>
+						{result.data.map((post) => (
 							<li>
-								<a href={`/blog/${post.id}/`}>
-									{post.data.heroImage && (
-										<Image width={720} height={360} src={post.data.heroImage} alt="" />
+								<a href={`/blog/${post.slug}/`}>
+									{post.thumbnailUrl && (
+										<img width="720" height="360" src={post.thumbnailUrl} alt="" />
 									)}
-									<h4 class="title">{post.data.title}</h4>
+									<h4 class="title">{post.title}</h4>
 									<p class="date">
-										<FormattedDate date={post.data.pubDate} />
+										<FormattedDate date={new Date(post.publishedAt)} />
 									</p>
 								</a>
 							</li>
-						))
-					}
-				</ul>
+						))}
+					</ul>
+				)}
 			</section>
 		</main>
 		<Footer />

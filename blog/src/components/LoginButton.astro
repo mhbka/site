@@ -33,7 +33,10 @@ else {
 		});
 	}
 	else {
-		buttonCallback = async () => await supabaseClient.auth.signOut();
+		buttonCallback = async () => { 
+			await supabaseClient.auth.signOut();
+			location.reload();
+		}
 	}
 
 	document.querySelector('[data-login-button]')?.addEventListener('click', buttonCallback);

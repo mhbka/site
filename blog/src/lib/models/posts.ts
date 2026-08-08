@@ -5,9 +5,10 @@ export interface PostSummary {
 	title: string;
 	slug: string;
 	thumbnailUrl: string | null;
+	publishedAt: string;
 }
 
-export interface Post extends PostSummary {
+export interface Post extends Omit<PostSummary, 'publishedAt'> {
 	authorId: string;
 	contentMd: string;
 	status: PostStatus;

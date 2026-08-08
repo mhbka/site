@@ -1,19 +1,25 @@
 ---
-import { Image } from 'astro:assets';
-import type { CollectionEntry } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
+import FetchError from '../components/FetchError.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
 
-type Props = CollectionEntry<'blog'>['data'];
+interface Props {
+	title: string;
+	publishedAt?: Date;
+	updatedAt?: Date;
+	thumbnailUrl?: string | null;
+	content?: string;
+	errorMessage?: string;
+}
 
-const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
+const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage } = Astro.props;
 ---
 
 <html lang="en">
 	<head>
-		<BaseHead title={title} description={description} />
+		<BaseHead title={title} description={title} />
 		<style>
 			main {
 				width: calc(100% - 2em);
@@ -58,18 +64,21 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 	<body>
 		<Header />
 		<main>
+			{errorMessage ? (
+				<div class="prose"><FetchError message={errorMessage} /></div>
+			) : (
 			<article>
 				<div class="hero-image">
-					{heroImage && <Image width={1020} height={510} src={heroImage} alt="" />}
+					{thumbnailUrl && <img width="1020" height="510" src={thumbnailUrl} alt="" />}
 				</div>
 				<div class="prose">
 					<div class="title">
 						<div class="date">
-							<FormattedDate date={pubDate} />
+							{publishedAt && <FormattedDate date={publishedAt} />}
 							{
-								updatedDate && (
+								updatedAt && publishedAt && updatedAt.valueOf() !== publishedAt.valueOf() && (
 									<div class="last-updated-on">
-										Last updated on <FormattedDate date={updatedDate} />
+										Last updated on <FormattedDate date={updatedAt} />
 									</div>
 								)
 							}
@@ -77,9 +86,10 @@ const { title, description, pubDate, updatedDate, heroImage } = Astro.props;
 						<h1>{title}</h1>
 						<hr />
 					</div>
-					<slot />
+					{content && <div set:html={content} />}
 				</div>
 			</article>
+			)}
 		</main>
 		<Footer />
 	</body>

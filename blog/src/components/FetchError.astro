@@ -1,0 +1,28 @@
+---
+interface Props {
+	message: string;
+}
+
+const { message } = Astro.props;
+---
+
+<section class="fetch-error" role="alert">
+	<h1>Something went wrong</h1>
+	<p>{message}</p>
+</section>
+
+<style>
+	.fetch-error {
+		padding: 1.5rem;
+		border: 1px solid rgb(var(--gray-light));
+		border-radius: 12px;
+		background: white;
+	}
+	.fetch-error h1,
+	.fetch-error p {
+		margin: 0;
+	}
+	.fetch-error p {
+		margin-top: 0.5rem;
+	}
+</style>

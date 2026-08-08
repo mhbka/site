@@ -1,20 +1,23 @@
 ---
-import { type CollectionEntry, getCollection, render } from 'astro:content';
 import BlogPost from '../../layouts/BlogPost.astro';
+import { blogApi } from '../../lib/api.ts';
+import { fetchResult } from '../../lib/fetch-result.ts';
+import { renderMarkdown } from '../../lib/markdown.ts';
 
-export async function getStaticPaths() {
-	const posts = await getCollection('blog');
-	return posts.map((post) => ({
-		params: { slug: post.id },
-		props: post,
-	}));
-}
-type Props = CollectionEntry<'blog'>;
-
-const post = Astro.props;
-const { Content } = await render(post);
+const result = await fetchResult(
+	() => blogApi.getPost(Astro.params.slug ?? ''),
+	'We could not load this blog post. Please try again shortly.',
+);
+const post = result.data;
+const content = post ? await renderMarkdown(post.contentMd) : undefined;
+const publishedAt = post ? new Date(post.publishedAt ?? post.createdAt) : undefined;
 ---
 
-<BlogPost {...post.data}>
-	<Content />
-</BlogPost>
+<BlogPost
+	title={post?.title ?? 'Blog post unavailable'}
+	publishedAt={publishedAt}
+	updatedAt={post ? new Date(post.updatedAt) : undefined}
+	thumbnailUrl={post?.thumbnailUrl}
+	content={content}
+	errorMessage={result.error}
+/>
