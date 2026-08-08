@@ -37,6 +37,7 @@ pub struct PostSummary {
     pub title: String,
     pub slug: String,
     pub thumbnail_url: Option<String>,
+    pub published_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -57,6 +58,7 @@ pub struct UpdatePostRequest {
 #[cfg(test)]
 mod tests {
     use super::{PostStatus, PostSummary, UpdatePostRequest};
+    use chrono::Utc;
     use uuid::Uuid;
 
     #[test]
@@ -79,6 +81,7 @@ mod tests {
             title: "Hello".to_string(),
             slug: "hello".to_string(),
             thumbnail_url: Some("https://example.test/image.png".to_string()),
+            published_at: Utc::now(),
         };
 
         let json = serde_json::to_value(post).unwrap();

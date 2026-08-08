@@ -1,9 +1,10 @@
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     routing::{get, post, put},
     Json, Router,
 };
+use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -21,23 +22,100 @@ pub fn router() -> Router<PgPool> {
 }
 
 /// GET /posts — published posts only, newest first. Paginate as needed.
+const DEFAULT_PAGE_SIZE: u32 = 50;
+const MAX_PAGE_SIZE: u32 = 100;
+
+#[derive(Debug, Deserialize)]
+struct ListPostsQuery {
+    page: Option<u32>,
+    size: Option<u32>,
+}
+
+impl ListPostsQuery {
+    fn pagination(self) -> Result<(i64, i64), RouteError> {
+        let page = self.page.unwrap_or(1);
+        let size = self.size.unwrap_or(DEFAULT_PAGE_SIZE);
+
+        if page == 0 {
+            return Err(RouteError::bad_request("page must be at least 1"));
+        }
+        if size == 0 || size > MAX_PAGE_SIZE {
+            return Err(RouteError::bad_request("size must be between 1 and 100"));
+        }
+
+        let offset = u64::from(page - 1) * u64::from(size);
+        Ok((i64::from(size), offset as i64))
+    }
+}
+
 async fn list_posts(
     State(pool): State<PgPool>,
     OptionalAuthUser(_user): OptionalAuthUser,
+    Query(query): Query<ListPostsQuery>,
 ) -> RouteResult<Json<Vec<PostSummary>>> {
+    let (size, offset) = query.pagination()?;
     let posts = sqlx::query_as::<_, PostSummary>(
         r#"
-        select id, title, slug, thumbnail_url
+        select id, title, slug, thumbnail_url, published_at
         from posts
         where status = 'published' and published_at <= now() and deleted_at is null
         order by published_at desc
-        limit 50
+        limit $1 offset $2
         "#,
     )
+    .bind(size)
+    .bind(offset)
     .fetch_all(&pool)
     .await?;
 
     Ok(Json(posts))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ListPostsQuery, DEFAULT_PAGE_SIZE};
+
+    #[test]
+    fn uses_default_pagination_values() {
+        assert_eq!(
+            ListPostsQuery {
+                page: None,
+                size: None
+            }
+            .pagination()
+            .unwrap(),
+            (i64::from(DEFAULT_PAGE_SIZE), 0)
+        );
+    }
+
+    #[test]
+    fn calculates_offset_for_requested_page() {
+        assert_eq!(
+            ListPostsQuery {
+                page: Some(3),
+                size: Some(20)
+            }
+            .pagination()
+            .unwrap(),
+            (20, 40)
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_pagination_values() {
+        assert!(ListPostsQuery {
+            page: Some(0),
+            size: Some(20)
+        }
+        .pagination()
+        .is_err());
+        assert!(ListPostsQuery {
+            page: Some(1),
+            size: Some(101)
+        }
+        .pagination()
+        .is_err());
+    }
 }
 
 /// GET /posts/:slug — public read of a single published post.
