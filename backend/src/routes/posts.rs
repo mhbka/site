@@ -21,6 +21,21 @@ pub fn router() -> Router<PgPool> {
         .route("/posts/id/:id/publish", post(publish_post))
 }
 
+async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {
+    let is_author = sqlx::query_scalar::<_, bool>(
+        "select exists(select 1 from profiles where user_id = $1 and is_author)",
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    if is_author {
+        Ok(())
+    } else {
+        Err(RouteError::forbidden("author access required"))
+    }
+}
+
 /// GET /posts — published posts only, newest first. Paginate as needed.
 const DEFAULT_PAGE_SIZE: u32 = 50;
 const MAX_PAGE_SIZE: u32 = 100;
@@ -143,6 +158,8 @@ async fn create_post(
     user: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> RouteResult<Json<Post>> {
+    require_author(&pool, user.id).await?;
+
     let slug = db::slugify(&req.title);
     let post = sqlx::query_as::<_, Post>(
         r#"
@@ -179,6 +196,8 @@ async fn update_post(
     Path(id): Path<Uuid>,
     Json(req): Json<UpdatePostRequest>,
 ) -> RouteResult<Json<Post>> {
+    require_author(&pool, user.id).await?;
+
     let existing =
         sqlx::query_as::<_, Post>("select * from posts where id = $1 and author_id = $2")
             .bind(id)
@@ -228,6 +247,8 @@ async fn publish_post(
     user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> RouteResult<Json<Post>> {
+    require_author(&pool, user.id).await?;
+
     let post = sqlx::query_as::<_, Post>(
         r#"
         update posts set status = $1, published_at = now()
@@ -251,6 +272,8 @@ async fn delete_post(
     user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> RouteResult<StatusCode> {
+    require_author(&pool, user.id).await?;
+
     sqlx::query("update posts set deleted_at = now() where id = $1 and author_id = $2")
         .bind(id)
         .bind(user.id)

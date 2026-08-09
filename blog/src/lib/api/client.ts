@@ -13,7 +13,7 @@ export class ApiError extends Error {
 }
 
 const environment = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
-export const DEFAULT_API_BASE_URL = environment?.PUBLIC_API_URL ?? 'http://localhost:8080';
+export const DEFAULT_API_BASE_URL = environment?.BACKEND_URL ?? 'http://localhost:8080';
 
 export function createApiClient({
 	baseUrl = DEFAULT_API_BASE_URL,

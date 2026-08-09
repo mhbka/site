@@ -8,7 +8,7 @@ import { parseEnv } from 'node:util';
 
 import node from '@astrojs/node';
 
-const exposedEnvPrefixes = ['PUBLIC_', 'SUPABASE_'];
+const exposedEnvPrefixes = ['PUBLIC_', 'SUPABASE_', 'BACKEND_'];
 const isBuild = process.argv.includes('build');
 
 function loadBuildEnv() {

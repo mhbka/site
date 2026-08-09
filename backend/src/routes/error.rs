@@ -8,6 +8,7 @@ pub type RouteResult<T> = Result<T, RouteError>;
 #[derive(Debug)]
 pub enum RouteError {
     BadRequest(&'static str),
+    Forbidden(&'static str),
     NotFound(&'static str),
     Database(sqlx::Error),
 }
@@ -19,6 +20,10 @@ impl RouteError {
 
     pub const fn not_found(message: &'static str) -> Self {
         Self::NotFound(message)
+    }
+
+    pub const fn forbidden(message: &'static str) -> Self {
+        Self::Forbidden(message)
     }
 }
 
@@ -32,6 +37,7 @@ impl IntoResponse for RouteError {
     fn into_response(self) -> Response {
         match self {
             Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message).into_response(),
+            Self::Forbidden(message) => (StatusCode::FORBIDDEN, message).into_response(),
             Self::NotFound(message) => (StatusCode::NOT_FOUND, message).into_response(),
             Self::Database(error) => {
                 tracing::error!(%error, "database error");
@@ -54,6 +60,12 @@ mod tests {
                 .into_response()
                 .status(),
             StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            RouteError::forbidden("not an author")
+                .into_response()
+                .status(),
+            StatusCode::FORBIDDEN
         );
         assert_eq!(
             RouteError::not_found("missing").into_response().status(),

@@ -22,6 +22,7 @@ create table posts (
   published_at       timestamptz,               -- set when published
 
   thumbnail_url      text,
+  tags               text[] not null default '{}',
 
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now(),
@@ -31,6 +32,7 @@ create table posts (
 create index idx_posts_status_published on posts (status, published_at desc)
   where deleted_at is null;
 create index idx_posts_author on posts (author_id);
+create index idx_posts_tags on posts using gin (tags);
 
 -- keep updated_at fresh
 create or replace function set_updated_at()
@@ -58,21 +60,6 @@ create table post_revisions (
 );
 
 create index idx_revisions_post on post_revisions (post_id, created_at desc);
-
--- ---------------------------------------------------------
--- TAGS
--- ---------------------------------------------------------
-create table tags (
-  id    uuid primary key default gen_random_uuid(),
-  name  text not null unique,
-  slug  text not null unique
-);
-
-create table post_tags (
-  post_id  uuid not null references posts(id) on delete cascade,
-  tag_id   uuid not null references tags(id) on delete cascade,
-  primary key (post_id, tag_id)
-);
 
 -- ---------------------------------------------------------
 -- COMMENTS  (threaded, moderatable)
@@ -107,4 +94,12 @@ create table media (
   public_url    text not null,
   content_type  text,
   created_at    timestamptz not null default now()
+);
+
+-- ---------------------------------------------------------
+-- PROFILES (additional metadata for users)
+-- ---------------------------------------------------------
+create table profiles (
+  user_id   uuid primary key references auth.users(id) on delete cascade,
+  is_author boolean not null default false
 );
