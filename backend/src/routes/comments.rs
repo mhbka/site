@@ -3,23 +3,22 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::auth::AuthUser;
+use crate::{auth::AuthUser, state::AppState};
 use crate::models::comments::{Comment, CreateCommentRequest};
 use crate::routes::error::{RouteError, RouteResult};
 
-pub fn router() -> Router<PgPool> {
+pub fn router() -> Router<AppState> {
     Router::new().route(
-        "/posts/id/:post_id/comments",
+        "/post/:post_id",
         get(list_comments).post(create_comment),
     )
 }
 
 /// GET /posts/id/:post_id/comments — visible comments only.
 async fn list_comments(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     Path(post_id): Path<Uuid>,
 ) -> RouteResult<Json<Vec<Comment>>> {
     let comments = sqlx::query_as::<_, Comment>(
@@ -30,7 +29,7 @@ async fn list_comments(
         "#,
     )
     .bind(post_id)
-    .fetch_all(&pool)
+    .fetch_all(&app_state.pool)
     .await?;
 
     Ok(Json(comments))
@@ -39,7 +38,7 @@ async fn list_comments(
 /// POST /posts/id/:post_id/comments — requires auth (same Supabase user
 /// system as the rest of the site).
 async fn create_comment(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     user: AuthUser,
     Path(post_id): Path<Uuid>,
     Json(req): Json<CreateCommentRequest>,
@@ -59,7 +58,7 @@ async fn create_comment(
     .bind(user.id)
     .bind(req.parent_comment_id)
     .bind(&req.body)
-    .fetch_one(&pool)
+    .fetch_one(&app_state.pool)
     .await?;
 
     Ok(Json(comment))

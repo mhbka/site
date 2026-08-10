@@ -2,16 +2,19 @@ mod auth;
 mod db;
 mod models;
 mod routes;
+mod state;
 
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
+
+use crate::state::{AppState};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    let pool = db::connect().await?;
+    let app_state = AppState::new(db::connect().await?);
 
     // Loosen this to actual frontend origin before going to production
     let cors = CorsLayer::new()
@@ -20,9 +23,10 @@ async fn main() -> anyhow::Result<()> {
         .allow_headers(Any);
 
     let app = Router::new()
-        .merge(routes::posts::router())
-        .merge(routes::comments::router())
-        .with_state(pool)
+        .nest("/posts", routes::posts::router())
+        .nest("/users", routes::users::router())
+        .nest("/comments", routes::comments::router())
+        .with_state(app_state)
         .layer(cors)
         .layer(tower_http::trace::TraceLayer::new_for_http());
 

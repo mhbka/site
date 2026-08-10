@@ -54,6 +54,17 @@ test('sends requested pagination values when listing posts', async () => {
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts?page=3&size=20');
 });
 
+test('gets the current user author status with their access token', async () => {
+	const mock = createFetch(Response.json({ isAuthor: true }));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	assert.deepEqual(await api.getAuthorStatus('access-token'), { isAuthor: true });
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/users/is-author');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+});
+
 test('throws an ApiError that includes the response status and body', async () => {
 	const mock = createFetch(Response.json({ error: 'post not found' }, { status: 404 }));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });

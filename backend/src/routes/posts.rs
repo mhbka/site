@@ -8,35 +8,28 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::auth::{AuthUser, OptionalAuthUser};
+use crate::{auth::{AuthUser, OptionalAuthUser}, state::AppState};
 use crate::db;
 use crate::models::posts::*;
 use crate::routes::error::{RouteError, RouteResult};
 
-pub fn router() -> Router<PgPool> {
+pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/posts", get(list_posts).post(create_post))
-        .route("/posts/:slug", get(get_post_by_slug))
-        .route("/posts/id/:id", put(update_post).delete(delete_post))
-        .route("/posts/id/:id/publish", post(publish_post))
+        .route("/", get(list_posts).post(create_post))
+        .route("/:slug", get(get_post_by_slug))
+        .route("/id/:id", put(update_post).delete(delete_post))
+        .route("/id/:id/publish", post(publish_post))
 }
 
 async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {
-    let is_author = sqlx::query_scalar::<_, bool>(
-        "select exists(select 1 from profiles where user_id = $1 and is_author)",
-    )
-    .bind(user_id)
-    .fetch_one(pool)
-    .await?;
-
-    if is_author {
+    if crate::routes::users::is_author(pool, user_id).await? {
         Ok(())
     } else {
         Err(RouteError::forbidden("author access required"))
     }
 }
 
-/// GET /posts — published posts only, newest first. Paginate as needed.
+/// GET  — published posts only, newest first. Paginate as needed.
 const DEFAULT_PAGE_SIZE: u32 = 50;
 const MAX_PAGE_SIZE: u32 = 100;
 
@@ -64,7 +57,7 @@ impl ListPostsQuery {
 }
 
 async fn list_posts(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     OptionalAuthUser(_user): OptionalAuthUser,
     Query(query): Query<ListPostsQuery>,
 ) -> RouteResult<Json<Vec<PostSummary>>> {
@@ -80,7 +73,7 @@ async fn list_posts(
     )
     .bind(size)
     .bind(offset)
-    .fetch_all(&pool)
+    .fetch_all(&app_state.pool)
     .await?;
 
     Ok(Json(posts))
@@ -131,11 +124,12 @@ mod tests {
         .pagination()
         .is_err());
     }
+
 }
 
-/// GET /posts/:slug — public read of a single published post.
+/// GET /:slug — public read of a single published post.
 async fn get_post_by_slug(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     Path(slug): Path<String>,
 ) -> RouteResult<Json<Post>> {
     let post = sqlx::query_as::<_, Post>(
@@ -145,20 +139,20 @@ async fn get_post_by_slug(
         "#,
     )
     .bind(slug)
-    .fetch_optional(&pool)
+    .fetch_optional(&app_state.pool)
     .await?
     .ok_or(RouteError::not_found("post not found"))?;
 
     Ok(Json(post))
 }
 
-/// POST /posts — creates a draft. Requires auth.
+/// POST  — creates a draft. Requires auth.
 async fn create_post(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     user: AuthUser,
     Json(req): Json<CreatePostRequest>,
 ) -> RouteResult<Json<Post>> {
-    require_author(&pool, user.id).await?;
+    require_author(&app_state.pool, user.id).await?;
 
     let slug = db::slugify(&req.title);
     let post = sqlx::query_as::<_, Post>(
@@ -172,7 +166,7 @@ async fn create_post(
     .bind(&req.title)
     .bind(&slug)
     .bind(&req.content_md)
-    .fetch_one(&pool)
+    .fetch_one(&app_state.pool)
     .await?;
 
     // Snapshot the first revision immediately.
@@ -183,26 +177,26 @@ async fn create_post(
     .bind(&post.title)
     .bind(&post.content_md)
     .bind(user.id)
-    .execute(&pool)
+    .execute(&app_state.pool)
     .await?;
 
     Ok(Json(post))
 }
 
-/// PUT /posts/id/:id — edit a post (title/content/etc). Author-only.
+/// PUT /id/:id — edit a post (title/content/etc). Author-only.
 async fn update_post(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
     Json(req): Json<UpdatePostRequest>,
 ) -> RouteResult<Json<Post>> {
-    require_author(&pool, user.id).await?;
+    require_author(&app_state.pool, user.id).await?;
 
     let existing =
         sqlx::query_as::<_, Post>("select * from posts where id = $1 and author_id = $2")
             .bind(id)
             .bind(user.id)
-            .fetch_optional(&pool)
+            .fetch_optional(&app_state.pool)
             .await?
             .ok_or(RouteError::not_found("post not found"))?;
 
@@ -223,7 +217,7 @@ async fn update_post(
     .bind(&thumbnail_url)
     .bind(id)
     .bind(user.id)
-    .fetch_one(&pool)
+    .fetch_one(&app_state.pool)
     .await?;
 
     // Snapshot a revision on every save. Prune/collapse old ones later if the
@@ -235,19 +229,19 @@ async fn update_post(
     .bind(&post.title)
     .bind(&post.content_md)
     .bind(user.id)
-    .execute(&pool)
+    .execute(&app_state.pool)
     .await?;
 
     Ok(Json(post))
 }
 
-/// POST /posts/id/:id/publish — publishes immediately.
+/// POST /id/:id/publish — publishes immediately.
 async fn publish_post(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> RouteResult<Json<Post>> {
-    require_author(&pool, user.id).await?;
+    require_author(&app_state.pool, user.id).await?;
 
     let post = sqlx::query_as::<_, Post>(
         r#"
@@ -259,25 +253,25 @@ async fn publish_post(
     .bind(PostStatus::Published)
     .bind(id)
     .bind(user.id)
-    .fetch_optional(&pool)
+    .fetch_optional(&app_state.pool)
     .await?
     .ok_or(RouteError::not_found("post not found"))?;
 
     Ok(Json(post))
 }
 
-/// DELETE /posts/id/:id — soft delete.
+/// DELETE /id/:id — soft delete.
 async fn delete_post(
-    State(pool): State<PgPool>,
+    State(app_state): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> RouteResult<StatusCode> {
-    require_author(&pool, user.id).await?;
+    require_author(&app_state.pool, user.id).await?;
 
     sqlx::query("update posts set deleted_at = now() where id = $1 and author_id = $2")
         .bind(id)
         .bind(user.id)
-        .execute(&pool)
+        .execute(&app_state.pool)
         .await?;
 
     Ok(StatusCode::NO_CONTENT)

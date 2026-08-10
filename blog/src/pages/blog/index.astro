@@ -6,12 +6,27 @@ import Header from '../../components/Header.astro';
 import FetchError from '../../components/FetchError.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { blogApi } from '../../lib/api.ts';
+import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult } from '../../lib/fetch-result.ts';
 
 const result = await fetchResult(
 	() => blogApi.listPosts(1, 100),
 	'We could not load the blog posts. Please try again shortly.',
 );
+
+const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session }, error } = await supabaseClient.auth.getSession();
+let isAuthor = false;
+
+if (session) {
+	try {
+		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
+	} catch (e) {
+		console.warn(`Failed to fetch isAuthor: ${e}`);
+	}
+} else {
+	console.warn(`Unable to get session; error: ${error}`)
+}
 ---
 
 <!doctype html>
@@ -71,6 +86,15 @@ const result = await fetchResult(
 			ul a:hover img {
 				box-shadow: var(--box-shadow);
 			}
+			.create-post {
+				display: inline-block;
+				margin-bottom: 2rem;
+				padding: 0.6rem 1rem;
+				border-radius: 6px;
+				background: rgb(var(--accent));
+				color: white;
+				text-decoration: none;
+			}
 			@media (max-width: 720px) {
 				ul {
 					gap: 0.5em;
@@ -92,11 +116,12 @@ const result = await fetchResult(
 		<Header />
 		<main>
 			<section>
+				{isAuthor && <a class="create-post" href="/edit-post/">Create Post</a>}
 				{result.error ? (
 					<FetchError message={result.error} />
 				) : (
 					<ul>
-						{result.data.map((post) => (
+						{result.data?.map((post) => (
 							<li>
 								<a href={`/blog/${post.slug}/`}>
 									{post.thumbnailUrl && (
