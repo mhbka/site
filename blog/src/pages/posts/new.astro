@@ -1,0 +1,36 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import Footer from '../../components/Footer.astro';
+import Header from '../../components/Header.astro';
+import PostEditor from '../../components/PostEditor.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { blogApi } from '../../lib/api.ts';
+import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
+
+const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session } } = await supabaseClient.auth.getSession();
+let isAuthor = false;
+
+if (session) {
+	try {
+		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
+	} catch (error) {
+		console.warn(`Unable to verify post author access: ${error}`);
+	}
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Create Post | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Create Post</h1>
+			{isAuthor ? <PostEditor /> : <p>You must be logged in with author access to create a post.</p>}
+		</main>
+		<Footer />
+	</body>
+</html>

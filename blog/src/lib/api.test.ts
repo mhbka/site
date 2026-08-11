@@ -45,6 +45,17 @@ test('returns no value for a successful delete', async () => {
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts/id/post-1');
 });
 
+test('gets an authenticated post by ID for editing', async () => {
+	const mock = createFetch(Response.json({ id: 'post-1', title: 'Draft' }));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.getPostById('post/id', 'access-token');
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/posts/id/post%2Fid');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+});
+
 test('sends requested pagination values when listing posts', async () => {
 	const mock = createFetch(Response.json([]));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
@@ -52,6 +63,17 @@ test('sends requested pagination values when listing posts', async () => {
 	await api.listPosts(3, 20);
 
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts?page=3&size=20');
+});
+
+test('gets the current author drafts with their access token', async () => {
+	const mock = createFetch(Response.json([]));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.listDrafts('access-token');
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/posts/drafts');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
 });
 
 test('gets the current user author status with their access token', async () => {

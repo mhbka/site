@@ -40,6 +40,17 @@ pub struct PostSummary {
     pub published_at: DateTime<Utc>,
 }
 
+/// Summary of a draft post for an author's private drafts listing.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct DraftPostSummary {
+    pub id: Uuid,
+    pub title: String,
+    pub slug: String,
+    pub thumbnail_url: Option<String>,
+    pub updated_at: DateTime<Utc>,
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePostRequest {
@@ -57,7 +68,7 @@ pub struct UpdatePostRequest {
 
 #[cfg(test)]
 mod tests {
-    use super::{PostStatus, PostSummary, UpdatePostRequest};
+    use super::{DraftPostSummary, PostStatus, PostSummary, UpdatePostRequest};
     use chrono::Utc;
     use uuid::Uuid;
 
@@ -87,6 +98,21 @@ mod tests {
         let json = serde_json::to_value(post).unwrap();
         assert_eq!(json["thumbnailUrl"], "https://example.test/image.png");
         assert!(json.get("thumbnail_url").is_none());
+    }
+
+    #[test]
+    fn serializes_draft_summary_fields_as_camel_case() {
+        let post = DraftPostSummary {
+            id: Uuid::nil(),
+            title: "Draft".to_string(),
+            slug: "draft".to_string(),
+            thumbnail_url: None,
+            updated_at: Utc::now(),
+        };
+
+        let json = serde_json::to_value(post).unwrap();
+        assert!(json.get("updatedAt").is_some());
+        assert!(json.get("updated_at").is_none());
     }
 
     #[test]

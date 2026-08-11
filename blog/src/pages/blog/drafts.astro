@@ -1,0 +1,173 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import FetchError from '../../components/FetchError.astro';
+import Footer from '../../components/Footer.astro';
+import FormattedDate from '../../components/FormattedDate.astro';
+import Header from '../../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import { blogApi } from '../../lib/api.ts';
+import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
+import { fetchResult, type FetchResult } from '../../lib/fetch-result.ts';
+import type { DraftPostSummary } from '../../lib/models/posts.ts';
+
+const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session }, error } = await supabaseClient.auth.getSession();
+let isAuthor = false;
+let draftsResult: FetchResult<DraftPostSummary[]> | undefined;
+
+if (session) {
+	try {
+		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
+		if (isAuthor) {
+			draftsResult = await fetchResult(
+				() => blogApi.listDrafts(session.access_token),
+				'We could not load your drafts. Please try again shortly.',
+			);
+		}
+	} catch (e) {
+		console.warn(`Failed to load drafts: ${e}`);
+	}
+} else {
+	console.warn(`Unable to get session; error: ${error}`);
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Drafts | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<style>
+			main { width: 960px; }
+			.page-actions, .draft-actions { display: flex; gap: 0.75rem; }
+			.page-actions { margin-bottom: 2rem; }
+			.action, .delete-button {
+				display: inline-block;
+				padding: 0.6rem 1rem;
+				border: 0;
+				border-radius: 6px;
+				background: rgb(var(--accent));
+				color: white;
+				font: inherit;
+				text-decoration: none;
+				cursor: pointer;
+			}
+			.delete-button { background: #b42318; }
+			ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+			li { width: calc(50% - 1rem); }
+			.draft-card { display: block; text-decoration: none; }
+			img { width: 100%; margin-bottom: 0.5rem; border-radius: 12px; }
+			.title { margin: 0; color: rgb(var(--black)); line-height: 1; }
+			.date { margin: 0.5rem 0; color: rgb(var(--gray)); }
+			.draft-card:hover .title { color: rgb(var(--accent)); }
+			.empty { color: rgb(var(--gray)); }
+			.confirm-dialog {
+				--dialog-surface: white;
+				--dialog-text: rgb(var(--black));
+				--dialog-backdrop: rgb(0 0 0 / 0.45);
+				width: min(32rem, calc(100% - 2rem));
+				padding: 0;
+				border: 0;
+				border-radius: 12px;
+				background: var(--dialog-surface);
+				color: var(--dialog-text);
+			}
+			.confirm-dialog::backdrop { background: var(--dialog-backdrop); }
+			.confirm-dialog__content { padding: 1.5rem; }
+			.confirm-dialog__title, .confirm-dialog__message { margin: 0; }
+			.confirm-dialog__message { margin-top: 0.75rem; }
+			.confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
+			.confirm-dialog__cancel { background: rgb(var(--gray-light)); color: rgb(var(--black)); }
+			.confirm-dialog__error { min-height: 1.5rem; margin: 0.75rem 0 0; color: #b42318; }
+			@media (max-width: 720px) {
+				li { width: 100%; }
+				.page-actions, .draft-actions { flex-wrap: wrap; }
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main>
+			<section>
+				{isAuthor ? (
+					<>
+						<div class="page-actions">
+							<a class="action" href="/posts/new/">Create Post</a>
+							<a class="action" href="/blog/">View published posts</a>
+						</div>
+						{draftsResult?.error ? (
+							<FetchError message={draftsResult.error} />
+						) : draftsResult?.data?.length ? (
+							<ul id="draft-list">
+								{draftsResult.data.map((post) => (
+									<li data-draft-id={post.id}>
+										<a class="draft-card" href={`/posts/edit/${post.id}/`}>
+											{post.thumbnailUrl && <img width="720" height="360" src={post.thumbnailUrl} alt="" />}
+											<h4 class="title">{post.title}</h4>
+											<p class="date">Updated <FormattedDate date={new Date(post.updatedAt)} /></p>
+										</a>
+										<div class="draft-actions">
+											<a class="action" href={`/posts/edit/${post.id}/`}>Edit</a>
+											<button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</button>
+										</div>
+									</li>
+								))}
+							</ul>
+						) : (
+							<p class="empty">You do not have any drafts yet.</p>
+						)}
+						<dialog class="confirm-dialog" id="delete-dialog" aria-labelledby="delete-dialog-title">
+							<div class="confirm-dialog__content">
+								<h2 class="confirm-dialog__title" id="delete-dialog-title">Delete draft?</h2>
+								<p class="confirm-dialog__message">This will remove “<span id="delete-draft-title"></span>”.</p>
+								<p class="confirm-dialog__error" id="delete-error" role="alert"></p>
+								<div class="confirm-dialog__actions">
+									<button class="action confirm-dialog__cancel" type="button" id="cancel-delete">Cancel</button>
+									<button class="delete-button" type="button" id="confirm-delete">Delete</button>
+								</div>
+							</div>
+						</dialog>
+					</>
+				) : (
+					<p>You must be logged in with author access to view drafts.</p>
+				)}
+			</section>
+		</main>
+		<Footer />
+		<script>
+			import { blogApi } from '../../lib/api.ts';
+			import { createSupabaseBrowserClient } from '../../lib/auth/supabase.ts';
+
+			const dialog = document.querySelector<HTMLDialogElement>('#delete-dialog');
+			const title = document.querySelector<HTMLElement>('#delete-draft-title');
+			const error = document.querySelector<HTMLElement>('#delete-error');
+			const confirmButton = document.querySelector<HTMLButtonElement>('#confirm-delete');
+			let draftId: string | undefined;
+
+			document.querySelectorAll<HTMLButtonElement>('[data-delete-id]').forEach((button) => {
+				button.addEventListener('click', () => {
+					draftId = button.dataset.deleteId;
+					if (title) title.textContent = button.dataset.deleteTitle ?? 'this draft';
+					if (error) error.textContent = '';
+					dialog?.showModal();
+				});
+			});
+
+			document.querySelector('#cancel-delete')?.addEventListener('click', () => dialog?.close());
+			confirmButton?.addEventListener('click', async () => {
+				if (!draftId || !confirmButton) return;
+				confirmButton.disabled = true;
+				try {
+					const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+					if (!session) throw new Error('Your session has expired. Please sign in again.');
+					await blogApi.deletePost(draftId, session.access_token);
+					document.querySelector(`[data-draft-id="${CSS.escape(draftId)}"]`)?.remove();
+					dialog?.close();
+				} catch (caughtError) {
+					if (error) error.textContent = caughtError instanceof Error ? caughtError.message : 'Unable to delete this draft.';
+				} finally {
+					confirmButton.disabled = false;
+				}
+			});
+		</script>
+	</body>
+</html>

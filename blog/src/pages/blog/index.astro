@@ -86,9 +86,13 @@ if (session) {
 			ul a:hover img {
 				box-shadow: var(--box-shadow);
 			}
-			.create-post {
-				display: inline-block;
+			.post-actions {
+				display: flex;
+				gap: 0.75rem;
 				margin-bottom: 2rem;
+			}
+			.post-action {
+				display: inline-block;
 				padding: 0.6rem 1rem;
 				border-radius: 6px;
 				background: rgb(var(--accent));
@@ -116,7 +120,12 @@ if (session) {
 		<Header />
 		<main>
 			<section>
-				{isAuthor && <a class="create-post" href="/edit-post/">Create Post</a>}
+				{isAuthor && (
+					<div class="post-actions">
+						<a class="post-action" href="/posts/new/">Create Post</a>
+						<a class="post-action" href="/blog/drafts/">View drafts</a>
+					</div>
+				)}
 				{result.error ? (
 					<FetchError message={result.error} />
 				) : (

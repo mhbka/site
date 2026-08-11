@@ -8,6 +8,14 @@ export interface PostSummary {
 	publishedAt: string;
 }
 
+export interface DraftPostSummary {
+	id: string;
+	title: string;
+	slug: string;
+	thumbnailUrl: string | null;
+	updatedAt: string;
+}
+
 export interface Post extends Omit<PostSummary, 'publishedAt'> {
 	authorId: string;
 	contentMd: string;

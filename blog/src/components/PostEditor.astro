@@ -1,0 +1,270 @@
+---
+import type { Post } from '../lib/models/posts.ts';
+
+interface Props {
+	post?: Post;
+}
+
+const { post } = Astro.props;
+---
+
+<form class="post-editor" data-post-editor data-post-id={post?.id}>
+	<label for="post-title">Title</label>
+	<input id="post-title" name="title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} />
+
+	<label for="post-tags">Tags</label>
+	<div class="tag-input" data-tag-input>
+		<ul class="tag-list" data-tag-list aria-label="Post tags"></ul>
+		<input
+			id="post-tags"
+			name="tags"
+			placeholder="Add a tag and press space"
+			autocomplete="off"
+			aria-describedby="tag-help"
+		/>
+	</div>
+	<p id="tag-help" class="editor-help">Tags are lowercase with no spaces.</p>
+
+	<label for="post-content">Content</label>
+	<div id="post-content" class="editor-surface" aria-label="Post content" data-initial-content={post?.contentMd ?? ''}></div>
+	<p class="editor-help">Use Markdown shortcuts as you type. Paste or drop images to upload and insert them.</p>
+
+	<div class="editor-actions">
+		<button type="submit">Save draft</button>
+		<p class="editor-status" data-editor-status role="status" aria-live="polite"></p>
+	</div>
+</form>
+
+<script>
+	import { Editor, defaultValueCtx, rootCtx } from '@milkdown/kit/core';
+	import { commonmark } from '@milkdown/kit/preset/commonmark';
+	import { gfm } from '@milkdown/kit/preset/gfm';
+	import { upload, uploadConfig } from '@milkdown/kit/plugin/upload';
+	import { Decoration } from '@milkdown/kit/prose/view';
+	import { getMarkdown } from '@milkdown/kit/utils';
+	import { nord } from '@milkdown/theme-nord';
+	import { createSupabaseBrowserClient } from '../lib/auth/supabase';
+	import { blogApi } from '../lib/api';
+	import { uploadImage } from '../lib/image-upload';
+	import { addTag, normalizeTag } from '../lib/tags';
+
+	const form = document.querySelector<HTMLFormElement>('[data-post-editor]');
+	const root = document.querySelector<HTMLElement>('#post-content');
+	const title = document.querySelector<HTMLInputElement>('#post-title');
+	const tagsInput = document.querySelector<HTMLInputElement>('#post-tags');
+	const tagList = document.querySelector<HTMLUListElement>('[data-tag-list]');
+	const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+	const status = document.querySelector<HTMLElement>('[data-editor-status]');
+	const uploadUrl = import.meta.env.PUBLIC_IMAGE_UPLOAD_URL;
+	let postId = form?.dataset.postId;
+
+	if (!form || !root || !title || !tagsInput || !tagList || !button || !status) {
+		throw new Error('Post editor is missing required elements.');
+	}
+
+	let tags: string[] = [];
+
+	function renderTags() {
+		tagList?.replaceChildren(...tags.map((tag) => {
+			const item = document.createElement('li');
+			const removeButton = document.createElement('button');
+			removeButton.type = 'button';
+			removeButton.className = 'tag';
+			removeButton.setAttribute('aria-label', `Remove ${tag} tag`);
+			removeButton.dataset.tag = tag;
+			removeButton.textContent = `${tag} ×`;
+			item.append(removeButton);
+			return item;
+		}));
+	}
+
+	function commitTag() {
+		if (tagsInput?.value) {
+			tags = addTag(tags, tagsInput?.value);
+			tagsInput.value = '';
+			renderTags();
+		}
+	}
+
+	tagsInput.addEventListener('input', () => {
+		tagsInput.value = normalizeTag(tagsInput.value);
+	});
+
+	tagsInput.addEventListener('keydown', (event) => {
+		if (event.key === ' ') {
+			event.preventDefault();
+			commitTag();
+		}
+
+		if (event.key === 'Backspace' && !tagsInput.value && tags.length) {
+			tags = tags.slice(0, -1);
+			renderTags();
+		}
+	});
+
+	tagList.addEventListener('click', (event) => {
+		const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-tag]');
+		if (!button?.dataset.tag) return;
+
+		tags = tags.filter((tag) => tag !== button.dataset.tag);
+		renderTags();
+		tagsInput.focus();
+	});
+
+	const supabaseClient = createSupabaseBrowserClient();
+	const editor = await Editor.make()
+		.config((ctx) => {
+			nord(ctx);
+			ctx.set(rootCtx, root);
+			ctx.set(defaultValueCtx, root.dataset.initialContent ?? '');
+			ctx.set(uploadConfig.key, {
+				enableHtmlFileUploader: false,
+				uploadWidgetFactory: (position, spec) => {
+					const indicator = document.createElement('span');
+					indicator.className = 'image-uploading';
+					indicator.textContent = 'Uploading image…';
+					return Decoration.widget(position, indicator, spec);
+				},
+				uploader: async (files, schema) => {
+					if (!uploadUrl) {
+						throw new Error('Image uploads are not configured yet. Set PUBLIC_IMAGE_UPLOAD_URL to enable them.');
+					}
+
+					const image = schema.nodes.image;
+					if (!image) throw new Error('The editor image extension is unavailable.');
+
+					const { data: { session } } = await supabaseClient.auth.getSession();
+					const uploadedImages = await Promise.all(
+						Array.from(files)
+							.filter((file) => file.type.startsWith('image/'))
+							.map(async (file) => image.create({
+								alt: file.name,
+								src: await uploadImage(file, uploadUrl, session?.access_token),
+							})),
+					);
+
+					if (!uploadedImages.length) throw new Error('Only image files can be uploaded.');
+					return uploadedImages;
+				},
+			});
+		})
+		.use(commonmark)
+		.use(gfm)
+		.use(upload)
+		.create();
+
+	form.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		const contentMd = editor.action(getMarkdown()).trim();
+		const postTitle = title.value.trim();
+
+		if (!postTitle || !contentMd) {
+			status.textContent = 'A title and content are required.';
+			return;
+		}
+
+		button.disabled = true;
+		status.textContent = postId ? 'Saving changes...' : 'Creating draft...';
+
+		try {
+			const { data: { session } } = await supabaseClient.auth.getSession();
+			if (!session) throw new Error('Please log in before saving a post.');
+
+			if (postId) {
+				await blogApi.updatePost(postId, { title: postTitle, contentMd }, session.access_token);
+				status.textContent = 'Changes saved.';
+			} else {
+				const post = await blogApi.createPost({ title: postTitle, contentMd }, session.access_token);
+				postId = post.id;
+				history.replaceState(null, '', `/posts/edit/${encodeURIComponent(post.id)}`);
+				status.textContent = 'Draft created.';
+			}
+		} catch (error) {
+			status.textContent = error instanceof Error ? error.message : 'Unable to save the post. Please try again.';
+		} finally {
+			button.disabled = false;
+		}
+	});
+</script>
+
+<style>
+	.post-editor {
+		display: grid;
+		gap: 0.75rem;
+	}
+	input {
+		padding: 0.7rem;
+		border: 1px solid rgb(var(--gray));
+		border-radius: 6px;
+	}
+	.tag-input {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		align-items: center;
+		padding: 0.4rem;
+		border: 1px solid rgb(var(--gray));
+		border-radius: 6px;
+	}
+	.tag-input:focus-within {
+		border-color: rgb(var(--accent));
+	}
+	.tag-input input {
+		min-width: 12rem;
+		flex: 1;
+		padding: 0.3rem;
+		border: 0;
+		outline: 0;
+	}
+	.tag-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.tag {
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		background: rgb(var(--gray-light));
+		color: rgb(var(--gray-dark));
+		font-size: 0.8rem;
+	}
+	.editor-surface {
+		min-height: 24rem;
+		border: 1px solid rgb(var(--gray));
+		border-radius: 6px;
+		overflow: hidden;
+	}
+	.editor-surface :global(.milkdown) {
+		min-height: 24rem;
+		padding: 1rem;
+	}
+	.editor-help,
+	.editor-status {
+		margin: 0;
+		font-size: 0.8rem;
+	}
+	.editor-actions {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+	button {
+		padding: 0.6rem 1rem;
+		border: 0;
+		border-radius: 6px;
+		background: rgb(var(--accent));
+		color: white;
+		font: inherit;
+		cursor: pointer;
+	}
+	button:disabled {
+		opacity: 0.6;
+		cursor: wait;
+	}
+	:global(.image-uploading) {
+		color: rgb(var(--gray));
+	}
+</style>

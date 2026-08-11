@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
-    routing::{get, post, put},
+    routing::{get, post},
     Json, Router,
 };
 use serde::Deserialize;
@@ -16,8 +16,9 @@ use crate::routes::error::{RouteError, RouteResult};
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_posts).post(create_post))
+        .route("/drafts", get(list_drafts))
         .route("/:slug", get(get_post_by_slug))
-        .route("/id/:id", put(update_post).delete(delete_post))
+        .route("/id/:id", get(get_post_by_id).put(update_post).delete(delete_post))
         .route("/id/:id/publish", post(publish_post))
 }
 
@@ -73,6 +74,28 @@ async fn list_posts(
     )
     .bind(size)
     .bind(offset)
+    .fetch_all(&app_state.pool)
+    .await?;
+
+    Ok(Json(posts))
+}
+
+/// GET /drafts — the authenticated author's drafts, newest updated first.
+async fn list_drafts(
+    State(app_state): State<AppState>,
+    user: AuthUser,
+) -> RouteResult<Json<Vec<DraftPostSummary>>> {
+    require_author(&app_state.pool, user.id).await?;
+
+    let posts = sqlx::query_as::<_, DraftPostSummary>(
+        r#"
+        select id, title, slug, thumbnail_url, updated_at
+        from posts
+        where status = 'draft' and author_id = $1 and deleted_at is null
+        order by updated_at desc
+        "#,
+    )
+    .bind(user.id)
     .fetch_all(&app_state.pool)
     .await?;
 
@@ -139,6 +162,26 @@ async fn get_post_by_slug(
         "#,
     )
     .bind(slug)
+    .fetch_optional(&app_state.pool)
+    .await?
+    .ok_or(RouteError::not_found("post not found"))?;
+
+    Ok(Json(post))
+}
+
+/// GET /id/:id — author-only access to a post, including drafts.
+async fn get_post_by_id(
+    State(app_state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<Uuid>,
+) -> RouteResult<Json<Post>> {
+    require_author(&app_state.pool, user.id).await?;
+
+    let post = sqlx::query_as::<_, Post>(
+        "select * from posts where id = $1 and author_id = $2 and deleted_at is null",
+    )
+    .bind(id)
+    .bind(user.id)
     .fetch_optional(&app_state.pool)
     .await?
     .ok_or(RouteError::not_found("post not found"))?;

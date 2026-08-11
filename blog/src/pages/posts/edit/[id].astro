@@ -1,0 +1,38 @@
+---
+import BaseHead from '../../../components/BaseHead.astro';
+import Footer from '../../../components/Footer.astro';
+import Header from '../../../components/Header.astro';
+import PostEditor from '../../../components/PostEditor.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
+import { blogApi } from '../../../lib/api.ts';
+import { createSupabaseServerClient } from '../../../lib/auth/supabase.ts';
+import type { Post } from '../../../lib/models/posts.ts';
+
+const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session } } = await supabaseClient.auth.getSession();
+let post: Post | undefined;
+
+if (session) {
+	try {
+		const { isAuthor } = await blogApi.getAuthorStatus(session.access_token);
+		if (isAuthor) post = await blogApi.getPostById(Astro.params.id ?? '', session.access_token);
+	} catch (error) {
+		console.warn(`Unable to load post for editing: ${error}`);
+	}
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`Edit Post | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main>
+			<h1>Edit Post</h1>
+			{post ? <PostEditor post={post} /> : <p>This post could not be found or you do not have access to edit it.</p>}
+		</main>
+		<Footer />
+	</body>
+</html>
