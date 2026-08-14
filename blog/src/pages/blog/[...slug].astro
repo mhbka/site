@@ -20,4 +20,5 @@ const publishedAt = post ? new Date(post.publishedAt ?? post.createdAt) : undefi
 	thumbnailUrl={post?.thumbnailUrl}
 	content={content}
 	errorMessage={result.error}
+	postId={post?.id}
 />

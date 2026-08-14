@@ -289,7 +289,7 @@ async fn publish_post(
     let post = sqlx::query_as::<_, Post>(
         r#"
         update posts set status = $1, published_at = now()
-        where id = $2 and author_id = $3
+        where id = $2 and author_id = $3 and status = 'draft' and deleted_at is null
         returning *
         "#,
     )

@@ -12,6 +12,8 @@ pub struct Comment {
     pub body: String,
     pub status: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub deleted_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -19,6 +21,11 @@ pub struct Comment {
 pub struct CreateCommentRequest {
     pub body: String,
     pub parent_comment_id: Option<Uuid>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateCommentRequest {
+    pub body: String,
 }
 
 #[cfg(test)]

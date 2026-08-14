@@ -6,6 +6,12 @@ export interface Comment {
 	body: string;
 	status: string;
 	createdAt: string;
+	updatedAt: string;
+	deletedAt: string | null;
+}
+
+export interface UpdateCommentInput {
+	body: string;
 }
 
 export interface CreateCommentInput {

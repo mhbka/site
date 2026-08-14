@@ -40,7 +40,7 @@ if (session) {
 			main { width: 960px; }
 			.page-actions, .draft-actions { display: flex; gap: 0.75rem; }
 			.page-actions { margin-bottom: 2rem; }
-			.action, .delete-button {
+			.action, .publish-button, .delete-button {
 				display: inline-block;
 				padding: 0.6rem 1rem;
 				border: 0;
@@ -51,6 +51,7 @@ if (session) {
 				text-decoration: none;
 				cursor: pointer;
 			}
+			.publish-button { background: #027a48; }
 			.delete-button { background: #b42318; }
 			ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
 			li { width: calc(50% - 1rem); }
@@ -107,6 +108,7 @@ if (session) {
 										</a>
 										<div class="draft-actions">
 											<a class="action" href={`/posts/edit/${post.id}/`}>Edit</a>
+											<button class="publish-button" type="button" data-publish-id={post.id}>Publish</button>
 											<button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</button>
 										</div>
 									</li>
@@ -142,6 +144,24 @@ if (session) {
 			const error = document.querySelector<HTMLElement>('#delete-error');
 			const confirmButton = document.querySelector<HTMLButtonElement>('#confirm-delete');
 			let draftId: string | undefined;
+
+			document.querySelectorAll<HTMLButtonElement>('[data-publish-id]').forEach((button) => {
+				button.addEventListener('click', async () => {
+					const draftId = button.dataset.publishId;
+					if (!draftId) return;
+
+					button.disabled = true;
+					try {
+						const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+						if (!session) throw new Error('Your session has expired. Please sign in again.');
+						await blogApi.publishPost(draftId, session.access_token);
+						document.querySelector(`[data-draft-id="${CSS.escape(draftId)}"]`)?.remove();
+					} catch (caughtError) {
+						window.alert(caughtError instanceof Error ? caughtError.message : 'Unable to publish this draft.');
+						button.disabled = false;
+					}
+				});
+			});
 
 			document.querySelectorAll<HTMLButtonElement>('[data-delete-id]').forEach((button) => {
 				button.addEventListener('click', () => {

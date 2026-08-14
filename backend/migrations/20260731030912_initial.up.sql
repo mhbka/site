@@ -75,7 +75,8 @@ create table comments (
                         check (status in ('visible', 'pending', 'hidden')),
 
   created_at         timestamptz not null default now(),
-  updated_at         timestamptz not null default now()
+  updated_at         timestamptz not null default now(),
+  deleted_at         timestamptz
 );
 
 create index idx_comments_post on comments (post_id, created_at);

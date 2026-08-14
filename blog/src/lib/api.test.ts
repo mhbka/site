@@ -45,6 +45,32 @@ test('returns no value for a successful delete', async () => {
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts/id/post-1');
 });
 
+test('edits and deletes authenticated comments', async () => {
+	const editMock = createFetch(Response.json({ id: 'comment-1', body: 'Updated' }));
+	const editApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: editMock.fetch });
+	await editApi.updateComment('comment/id', { body: 'Updated' }, 'access-token');
+	assert.equal(editMock.calls[0][0], 'https://api.example.test/comments/comment%2Fid');
+	assert.equal(editMock.calls[0][1]?.method, 'PUT');
+
+	const deleteMock = createFetch(new Response(null, { status: 204 }));
+	const deleteApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: deleteMock.fetch });
+	await deleteApi.deleteComment('comment/id', 'access-token');
+	assert.equal(deleteMock.calls[0][0], 'https://api.example.test/comments/comment%2Fid');
+	assert.equal(deleteMock.calls[0][1]?.method, 'DELETE');
+});
+
+test('publishes a draft through its authenticated publish route', async () => {
+	const mock = createFetch(Response.json({ id: 'post-1', status: 'published' }));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.publishPost('post/id', 'access-token');
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/posts/id/post%2Fid/publish');
+	assert.equal(options?.method, 'POST');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+});
+
 test('gets an authenticated post by ID for editing', async () => {
 	const mock = createFetch(Response.json({ id: 'post-1', title: 'Draft' }));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });

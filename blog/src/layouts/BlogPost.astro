@@ -4,6 +4,7 @@ import FetchError from '../components/FetchError.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import Comments from '../components/Comments.astro';
 
 interface Props {
 	title: string;
@@ -12,9 +13,10 @@ interface Props {
 	thumbnailUrl?: string | null;
 	content?: string;
 	errorMessage?: string;
+	postId?: string;
 }
 
-const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage } = Astro.props;
+const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage, postId } = Astro.props;
 ---
 
 <html lang="en">
@@ -87,6 +89,7 @@ const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage } = A
 						<hr />
 					</div>
 					{content && <div set:html={content} />}
+					{postId && <Comments postId={postId} />}
 				</div>
 			</article>
 			)}

@@ -1,6 +1,7 @@
 // @ts-check
 
 import mdx from '@astrojs/mdx';
+import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import { defineConfig, fontProviders } from 'astro/config';
 import { readFileSync } from 'node:fs';
@@ -24,7 +25,7 @@ function loadBuildEnv() {
 // https://astro.build/config
 export default defineConfig({
     site: 'https://example.com',
-    integrations: [mdx(), sitemap()],
+	integrations: [mdx(), react(), sitemap()],
 	output: 'server',
 	// The Supabase URL and publishable key are deliberately available to browser scripts.
 	vite: {

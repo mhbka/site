@@ -1,0 +1,11 @@
+.comments { margin: 3rem auto 0; padding-top: 2rem; border-top: 1px solid rgb(var(--gray-light)); }
+.comment-status { min-height: 1.5rem; color: rgb(var(--gray)); }
+.comment-form { display: grid; gap: .5rem; margin-bottom: 2rem; }
+.comment-form.compact { margin: 1rem 0; }
+.comments textarea { width: 100%; box-sizing: border-box; font: inherit; }
+.comments button { width: fit-content; }
+.comment { margin: 1rem 0 0 calc(var(--depth) * 1rem); padding-left: 1rem; border-left: 2px solid rgb(var(--gray-light)); }
+.comment-meta { margin: 0; color: rgb(var(--gray)); font-size: .9rem; }
+.comment-body { white-space: pre-wrap; }
+.comment-actions { display: flex; gap: .5rem; }
+.comment-actions button { padding: .2rem .5rem; font-size: .9rem; }
