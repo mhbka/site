@@ -84,6 +84,18 @@ test('publishes a draft through its authenticated publish route', async () => {
 	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
 });
 
+test('moves a published post to drafts through its authenticated draft route', async () => {
+	const mock = createFetch(Response.json({ id: 'post-1', status: 'draft' }));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.movePostToDraft('post/id', 'access-token');
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/posts/id/post%2Fid/draft');
+	assert.equal(options?.method, 'POST');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+});
+
 test('gets an authenticated post by ID for editing', async () => {
 	const mock = createFetch(Response.json({ id: 'post-1', title: 'Draft' }));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });

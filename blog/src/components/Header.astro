@@ -3,6 +3,12 @@ import { SITE_TITLE } from '../consts';
 import HeaderLink from './HeaderLink.astro';
 import LoginButton from './LoginButton.astro';
 import Link from './ui/Link.astro';
+
+interface Props {
+	isLoggedIn?: boolean;
+}
+
+const { isLoggedIn = false } = Astro.props;
 ---
 
 <header>
@@ -14,7 +20,7 @@ import Link from './ui/Link.astro';
 			<HeaderLink href="/about">About</HeaderLink>
 		</div>
 		<div class="social-links">
-			<LoginButton />
+			<LoginButton isLoggedIn={isLoggedIn} />
 			<Link href="https://m.webtoo.ls/@astro" target="_blank">
 				<span class="sr-only">Follow Astro on Mastodon</span>
 				<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32"

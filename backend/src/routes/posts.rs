@@ -20,6 +20,7 @@ pub fn router() -> Router<AppState> {
         .route("/:slug", get(get_post_by_slug))
         .route("/id/:id", get(get_post_by_id).put(update_post).delete(delete_post))
         .route("/id/:id/publish", post(publish_post))
+        .route("/id/:id/draft", post(move_post_to_draft))
 }
 
 async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {
@@ -311,6 +312,31 @@ async fn publish_post(
         "#,
     )
     .bind(PostStatus::Published)
+    .bind(id)
+    .bind(user.id)
+    .fetch_optional(&app_state.pool)
+    .await?
+    .ok_or(RouteError::not_found("post not found"))?;
+
+    Ok(Json(post))
+}
+
+/// POST /id/:id/draft — removes a published post from the public blog.
+async fn move_post_to_draft(
+    State(app_state): State<AppState>,
+    user: AuthUser,
+    Path(id): Path<Uuid>,
+) -> RouteResult<Json<Post>> {
+    require_author(&app_state.pool, user.id).await?;
+
+    let post = sqlx::query_as::<_, Post>(
+        r#"
+        update posts set status = $1, published_at = null
+        where id = $2 and author_id = $3 and status = 'published' and deleted_at is null
+        returning *
+        "#,
+    )
+    .bind(PostStatus::Draft)
     .bind(id)
     .bind(user.id)
     .fetch_optional(&app_state.pool)

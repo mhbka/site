@@ -9,6 +9,7 @@ import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session } } = await supabaseClient.auth.getSession();
+const isLoggedIn = Boolean(session);
 let isAuthor = false;
 
 if (session) {
@@ -26,7 +27,7 @@ if (session) {
 		<BaseHead title={`Create Post | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
-		<Header />
+		<Header isLoggedIn={isLoggedIn} />
 		<main class="post-page">
 			{isAuthor ? <PostEditor /> : <p>You must be logged in with author access to create a post.</p>}
 		</main>

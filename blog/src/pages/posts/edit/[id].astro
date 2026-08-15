@@ -10,6 +10,7 @@ import type { Post } from '../../../lib/models/posts.ts';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session } } = await supabaseClient.auth.getSession();
+const isLoggedIn = Boolean(session);
 let post: Post | undefined;
 
 if (session) {
@@ -28,7 +29,7 @@ if (session) {
 		<BaseHead title={`Edit Post | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
-		<Header />
+		<Header isLoggedIn={isLoggedIn} />
 		<main class="post-page">
 			{post ? <PostEditor post={post} /> : <p>This post could not be found or you do not have access to edit it.</p>}
 		</main>

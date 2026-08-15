@@ -190,14 +190,13 @@ export default function Comments({ postId }: Props) {
 			<h2 id="comments-heading">Comments</h2>
 			<p className="comment-status" aria-live="polite">{status}</p>
 			<form className="comment-form" onSubmit={submitNewComment}>
-				<label htmlFor="new-comment">Join the discussion</label>
 				<Textarea id="new-comment" name="body" rows={4} maxLength={5000} required />
 				<Button type="submit">Post comment</Button>
 			</form>
 			<div className="comment-list">
 				{roots.length ? roots.map((comment) => (
 					<CommentNode key={comment.id} comment={comment} childrenByParent={childrenByParent} currentUserId={currentUserId} depth={0} replyingTo={replyingTo} editingId={editingId} onReply={createComment} onEdit={updateComment} onDelete={deleteComment} setReplyingTo={setReplyingTo} setEditingId={setEditingId} />
-				)) : <p>No comments yet. Start the conversation.</p>}
+				)) : <p>No comments yet.</p>}
 			</div>
 		</section>
 	);

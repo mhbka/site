@@ -14,6 +14,7 @@ import Link from '../../components/ui/Link.astro';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session }, error } = await supabaseClient.auth.getSession();
+const isLoggedIn = Boolean(session);
 let isAuthor = false;
 let draftsResult: FetchResult<DraftPostSummary[]> | undefined;
 
@@ -74,7 +75,7 @@ if (session) {
 		</style>
 	</head>
 	<body>
-		<Header />
+		<Header isLoggedIn={isLoggedIn} />
 		<main>
 			<section>
 				{isAuthor ? (

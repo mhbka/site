@@ -4,6 +4,11 @@ import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import Link from '../components/ui/Link.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { createSupabaseServerClient } from '../lib/auth/supabase.ts';
+
+const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
+const { data: { session } } = await supabaseClient.auth.getSession();
+const isLoggedIn = Boolean(session);
 ---
 
 <!doctype html>
@@ -12,7 +17,7 @@ import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
 	</head>
 	<body>
-		<Header />
+		<Header isLoggedIn={isLoggedIn} />
 		<main>
 			<h1>🧑‍🚀 Hello, Astronaut!</h1>
 			<p>

@@ -5,6 +5,7 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import FetchError from '../../components/FetchError.astro';
 import Link from '../../components/ui/Link.astro';
+import MoveToDraftButton from '../../components/MoveToDraftButton.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { blogApi } from '../../lib/api.ts';
 import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
@@ -17,6 +18,7 @@ const result = await fetchResult(
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session }, error } = await supabaseClient.auth.getSession();
+const isLoggedIn = Boolean(session);
 let isAuthor = false;
 
 if (session) {
@@ -81,6 +83,7 @@ if (session) {
 				gap: 0.75rem;
 				margin-bottom: 2rem;
 			}
+			.post-list-actions { margin-top: 0.75rem; }
 			@media (max-width: 720px) {
 				ul {
 					gap: 0.5em;
@@ -89,7 +92,7 @@ if (session) {
 		</style>
 	</head>
 	<body>
-		<Header />
+		<Header isLoggedIn={isLoggedIn} />
 		<main>
 			<section>
 				{isAuthor && (
@@ -113,6 +116,11 @@ if (session) {
 										<FormattedDate date={new Date(post.publishedAt)} />
 									</p>
 								</Link>
+								{isAuthor && (
+									<div class="post-list-actions">
+										<MoveToDraftButton postId={post.id} />
+									</div>
+								)}
 							</li>
 						))}
 					</ul>

@@ -16,6 +16,8 @@ export function createPostsApi(request: ApiRequest) {
 			request<Post>(`/posts/id/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(input) }, token),
 		publishPost: (id: string, token: string) =>
 			request<Post>(`/posts/id/${encodeURIComponent(id)}/publish`, { method: 'POST' }, token),
+		movePostToDraft: (id: string, token: string) =>
+			request<Post>(`/posts/id/${encodeURIComponent(id)}/draft`, { method: 'POST' }, token),
 		deletePost: (id: string, token: string) =>
 			request<void>(`/posts/id/${encodeURIComponent(id)}`, { method: 'DELETE' }, token),
 	};

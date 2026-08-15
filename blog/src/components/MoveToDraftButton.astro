@@ -1,0 +1,34 @@
+---
+import Button from './ui/Button.astro';
+
+interface Props {
+	postId: string;
+}
+
+const { postId } = Astro.props;
+---
+
+<Button variant="secondary" type="button" data-move-to-draft-id={postId}>Move to draft</Button>
+
+<script>
+	import { blogApi } from '../lib/api.ts';
+	import { createSupabaseBrowserClient } from '../lib/auth/supabase.ts';
+
+	document.querySelectorAll<HTMLButtonElement>('[data-move-to-draft-id]').forEach((button) => {
+		button.addEventListener('click', async () => {
+			const postId = button.dataset.moveToDraftId;
+			if (!postId) return;
+
+			button.disabled = true;
+			try {
+				const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+				if (!session) throw new Error('Your session has expired. Please sign in again.');
+				await blogApi.movePostToDraft(postId, session.access_token);
+				window.location.assign(`/posts/edit/${encodeURIComponent(postId)}/`);
+			} catch (error) {
+				window.alert(error instanceof Error ? error.message : 'Unable to move this post to drafts.');
+				button.disabled = false;
+			}
+		});
+	});
+</script>
