@@ -28,10 +28,12 @@ export interface Post extends Omit<PostSummary, 'publishedAt'> {
 export interface CreatePostInput {
 	title: string;
 	contentMd: string;
+	slug?: string;
 }
 
 export interface UpdatePostInput {
 	title?: string;
 	contentMd?: string;
 	thumbnailUrl?: string | null;
+	slug?: string;
 }

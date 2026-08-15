@@ -1,36 +1,56 @@
 ---
 import type { Post } from '../lib/models/posts.ts';
+import Button from './ui/Button.astro';
+import FormattedDate from './FormattedDate.astro';
+import Input from './ui/Input.astro';
 
 interface Props {
 	post?: Post;
 }
 
 const { post } = Astro.props;
+const createdAt = post ? new Date(post.createdAt) : undefined;
+const updatedAt = post ? new Date(post.updatedAt) : undefined;
 ---
 
-<form class="post-editor" data-post-editor data-post-id={post?.id}>
-	<label for="post-title">Title</label>
-	<input id="post-title" name="title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} />
+<form class="post-prose post-editor" data-post-editor data-post-id={post?.id}>
+	<header class="post-header">
+		<p class="post-meta">Draft</p>
+		{
+			createdAt && (
+				<div class="post-meta">
+					<FormattedDate date={createdAt} />
+					{
+						updatedAt && updatedAt.valueOf() !== createdAt.valueOf() && (
+							<div class="post-meta__updated">Last updated on <FormattedDate date={updatedAt} /></div>
+						)
+					}
+				</div>
+			)
+		}
+		<Input id="post-title" class="post-title-input" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
+		<hr />
+	</header>
 
-	<label for="post-tags">Tags</label>
-	<div class="tag-input" data-tag-input>
-		<ul class="tag-list" data-tag-list aria-label="Post tags"></ul>
-		<input
-			id="post-tags"
-			name="tags"
-			placeholder="Add a tag and press space"
-			autocomplete="off"
-			aria-describedby="tag-help"
-		/>
+	<div class="post-properties">
+		<div class="tag-input" data-tag-input>
+			<ul class="tag-list" data-tag-list aria-label="Post tags"></ul>
+			<Input id="post-tags" name="tags" placeholder="Tags" autocomplete="off" aria-label="Post tags" />
+		</div>
+		<details class="post-settings">
+			<summary>Post settings</summary>
+			<Input id="post-slug" name="slug" placeholder="Slug" autocomplete="off" value={post?.slug ?? ''} aria-describedby="slug-help" />
+			<p id="slug-help" class="editor-help">Leave blank to generate one from the title. Use letters, numbers, and hyphens only.</p>
+		</details>
 	</div>
-	<p id="tag-help" class="editor-help">Tags are lowercase with no spaces.</p>
 
-	<label for="post-content">Content</label>
-	<div id="post-content" class="editor-surface" aria-label="Post content" data-initial-content={post?.contentMd ?? ''}></div>
-	<p class="editor-help">Use Markdown shortcuts as you type. Paste or drop images to upload and insert them.</p>
+	<div class="editor-surface" data-editor-surface>
+		<div id="post-content" class="markdown-content" aria-label="Post content" data-initial-content={post?.contentMd ?? ''}></div>
+		<p class="content-placeholder" data-content-placeholder>Content</p>
+	</div>
 
 	<div class="editor-actions">
-		<button type="submit">Save draft</button>
+		<Button type="submit">Save draft</Button>
 		<p class="editor-status" data-editor-status role="status" aria-live="polite"></p>
 	</div>
 </form>
@@ -50,7 +70,10 @@ const { post } = Astro.props;
 
 	const form = document.querySelector<HTMLFormElement>('[data-post-editor]');
 	const root = document.querySelector<HTMLElement>('#post-content');
+	const editorSurface = document.querySelector<HTMLElement>('[data-editor-surface]');
+	const contentPlaceholder = document.querySelector<HTMLElement>('[data-content-placeholder]');
 	const title = document.querySelector<HTMLInputElement>('#post-title');
+	const slug = document.querySelector<HTMLInputElement>('#post-slug');
 	const tagsInput = document.querySelector<HTMLInputElement>('#post-tags');
 	const tagList = document.querySelector<HTMLUListElement>('[data-tag-list]');
 	const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
@@ -58,11 +81,29 @@ const { post } = Astro.props;
 	const uploadUrl = import.meta.env.PUBLIC_IMAGE_UPLOAD_URL;
 	let postId = form?.dataset.postId;
 
-	if (!form || !root || !title || !tagsInput || !tagList || !button || !status) {
+	if (!form || !root || !editorSurface || !contentPlaceholder || !title || !slug || !tagsInput || !tagList || !button || !status) {
 		throw new Error('Post editor is missing required elements.');
 	}
+	const editorRoot = root;
+	const placeholder = contentPlaceholder;
+	const slugInput = slug;
 
 	let tags: string[] = [];
+
+	function slugError(value: string) {
+		return value && !/^[A-Za-z0-9-]+$/.test(value)
+			? 'Slug may contain only letters, numbers, and hyphens.'
+			: '';
+	}
+
+	function validateSlug() {
+		const error = slugError(slugInput.value);
+		slugInput.setCustomValidity(error);
+		slugInput.setAttribute('aria-invalid', String(Boolean(error)));
+		return error;
+	}
+
+	slugInput.addEventListener('input', validateSlug);
 
 	function renderTags() {
 		tagList?.replaceChildren(...tags.map((tag) => {
@@ -153,13 +194,27 @@ const { post } = Astro.props;
 		.use(upload)
 		.create();
 
+	function syncContentPlaceholder() {
+		const documentContent = editorRoot.querySelector<HTMLElement>('.ProseMirror');
+		placeholder.hidden = Boolean(documentContent?.textContent?.trim() || documentContent?.querySelector('img'));
+	}
+
+	editorRoot.addEventListener('input', syncContentPlaceholder);
+	new MutationObserver(syncContentPlaceholder).observe(editorRoot, { childList: true, characterData: true, subtree: true });
+	syncContentPlaceholder();
+
 	form.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		const contentMd = editor.action(getMarkdown()).trim();
 		const postTitle = title.value.trim();
+		const postSlug = slugInput.value.trim();
 
 		if (!postTitle || !contentMd) {
 			status.textContent = 'A title and content are required.';
+			return;
+		}
+		if (validateSlug()) {
+			slugInput.reportValidity();
 			return;
 		}
 
@@ -171,10 +226,10 @@ const { post } = Astro.props;
 			if (!session) throw new Error('Please log in before saving a post.');
 
 			if (postId) {
-				await blogApi.updatePost(postId, { title: postTitle, contentMd }, session.access_token);
+				await blogApi.updatePost(postId, { title: postTitle, contentMd, slug: postSlug }, session.access_token);
 				status.textContent = 'Changes saved.';
 			} else {
-				const post = await blogApi.createPost({ title: postTitle, contentMd }, session.access_token);
+				const post = await blogApi.createPost({ title: postTitle, contentMd, slug: postSlug }, session.access_token);
 				postId = post.id;
 				history.replaceState(null, '', `/posts/edit/${encodeURIComponent(post.id)}`);
 				status.textContent = 'Draft created.';
@@ -190,12 +245,31 @@ const { post } = Astro.props;
 <style>
 	.post-editor {
 		display: grid;
-		gap: 0.75rem;
+		gap: 1rem;
 	}
-	input {
-		padding: 0.7rem;
-		border: 1px solid rgb(var(--gray));
-		border-radius: 6px;
+	:global(.post-title-input) {
+		width: 100%;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		outline: 0;
+		background: transparent;
+		color: rgb(var(--black));
+		font: inherit;
+		font-size: 3.052em;
+		font-weight: 700;
+		line-height: 1.2;
+		text-align: left;
+	}
+	:global(.post-title-input)::placeholder,
+	.tag-input :global(.ui-input)::placeholder,
+	.content-placeholder {
+		color: rgb(var(--gray));
+		opacity: 1;
+	}
+	.post-properties {
+		display: grid;
+		gap: 0.75rem;
 	}
 	.tag-input {
 		display: flex;
@@ -203,18 +277,18 @@ const { post } = Astro.props;
 		gap: 0.4rem;
 		align-items: center;
 		padding: 0.4rem;
-		border: 1px solid rgb(var(--gray));
-		border-radius: 6px;
 	}
 	.tag-input:focus-within {
-		border-color: rgb(var(--accent));
+		border-radius: 6px;
+		box-shadow: 0 0 0 2px rgb(var(--accent));
 	}
-	.tag-input input {
+	.tag-input :global(.ui-input) {
 		min-width: 12rem;
 		flex: 1;
 		padding: 0.3rem;
 		border: 0;
 		outline: 0;
+		background: transparent;
 	}
 	.tag-list {
 		display: flex;
@@ -232,14 +306,31 @@ const { post } = Astro.props;
 		font-size: 0.8rem;
 	}
 	.editor-surface {
+		position: relative;
 		min-height: 24rem;
-		border: 1px solid rgb(var(--gray));
 		border-radius: 6px;
 		overflow: hidden;
 	}
+	.editor-surface:focus-within {
+		box-shadow: 0 0 0 2px rgb(var(--accent));
+	}
 	.editor-surface :global(.milkdown) {
 		min-height: 24rem;
-		padding: 1rem;
+		padding: 0;
+	}
+	.post-settings {
+		color: rgb(var(--gray));
+		font-size: 0.8rem;
+	}
+	.post-settings summary { cursor: pointer; }
+	.post-settings :global(.ui-input) { display: block; margin-top: 0.75rem; }
+	.post-settings :global(.ui-input) { width: 100%; }
+	.content-placeholder {
+		position: absolute;
+		top: 0;
+		left: 0;
+		margin: 0;
+		pointer-events: none;
 	}
 	.editor-help,
 	.editor-status {
@@ -250,19 +341,6 @@ const { post } = Astro.props;
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-	}
-	button {
-		padding: 0.6rem 1rem;
-		border: 0;
-		border-radius: 6px;
-		background: rgb(var(--accent));
-		color: white;
-		font: inherit;
-		cursor: pointer;
-	}
-	button:disabled {
-		opacity: 0.6;
-		cursor: wait;
 	}
 	:global(.image-uploading) {
 		color: rgb(var(--gray));

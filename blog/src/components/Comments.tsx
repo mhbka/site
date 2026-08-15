@@ -5,6 +5,8 @@ import './Comments.css';
 import { blogApi } from '../lib/api';
 import { createSupabaseBrowserClient } from '../lib/auth/supabase';
 import type { Comment } from '../lib/models/comments';
+import { Button } from './ui/react/Button';
+import { Textarea } from './ui/react/Textarea';
 
 interface Props {
 	postId: string;
@@ -64,27 +66,27 @@ function CommentNode({
 			</p>
 			{editingId === comment.id ? (
 				<form className="comment-form compact" onSubmit={submitEdit}>
-					<textarea name="body" rows={3} defaultValue={comment.body} maxLength={5000} required />
+					<Textarea name="body" rows={3} defaultValue={comment.body} maxLength={5000} required />
 					<div className="comment-actions">
-						<button type="submit">Save</button>
-						<button type="button" onClick={() => setEditingId()}>Cancel</button>
+						<Button type="submit">Save</Button>
+						<Button type="button" onClick={() => setEditingId()}>Cancel</Button>
 					</div>
 				</form>
 			) : <p className="comment-body">{isDeleted ? '[Comment deleted]' : comment.body}</p>}
 			{!isDeleted && editingId !== comment.id && (
 				<div className="comment-actions">
-					<button type="button" onClick={() => setReplyingTo(replyingTo === comment.id ? undefined : comment.id)}>Reply</button>
-					{isOwner && <button type="button" onClick={() => setEditingId(comment.id)}>Edit</button>}
-					{isOwner && <button type="button" onClick={() => void onDelete(comment.id)}>Delete</button>}
+					<Button type="button" onClick={() => setReplyingTo(replyingTo === comment.id ? undefined : comment.id)}>Reply</Button>
+					{isOwner && <Button type="button" onClick={() => setEditingId(comment.id)}>Edit</Button>}
+					{isOwner && <Button type="button" onClick={() => void onDelete(comment.id)}>Delete</Button>}
 				</div>
 			)}
 			{replyingTo === comment.id && (
 				<form className="comment-form compact" onSubmit={submitReply}>
 					<label>Reply to this comment</label>
-					<textarea name="body" rows={3} maxLength={5000} required autoFocus />
+					<Textarea name="body" rows={3} maxLength={5000} required autoFocus />
 					<div className="comment-actions">
-						<button type="submit">Post reply</button>
-						<button type="button" onClick={() => setReplyingTo()}>Cancel</button>
+						<Button type="submit">Post reply</Button>
+						<Button type="button" onClick={() => setReplyingTo()}>Cancel</Button>
 					</div>
 				</form>
 			)}
@@ -189,8 +191,8 @@ export default function Comments({ postId }: Props) {
 			<p className="comment-status" aria-live="polite">{status}</p>
 			<form className="comment-form" onSubmit={submitNewComment}>
 				<label htmlFor="new-comment">Join the discussion</label>
-				<textarea id="new-comment" name="body" rows={4} maxLength={5000} required />
-				<button type="submit">Post comment</button>
+				<Textarea id="new-comment" name="body" rows={4} maxLength={5000} required />
+				<Button type="submit">Post comment</Button>
 			</form>
 			<div className="comment-list">
 				{roots.length ? roots.map((comment) => (

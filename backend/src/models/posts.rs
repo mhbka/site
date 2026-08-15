@@ -56,6 +56,7 @@ pub struct DraftPostSummary {
 pub struct CreatePostRequest {
     pub title: String,
     pub content_md: String,
+    pub slug: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,11 +65,12 @@ pub struct UpdatePostRequest {
     pub title: Option<String>,
     pub content_md: Option<String>,
     pub thumbnail_url: Option<String>,
+    pub slug: Option<String>,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DraftPostSummary, PostStatus, PostSummary, UpdatePostRequest};
+    use super::{CreatePostRequest, DraftPostSummary, PostStatus, PostSummary, UpdatePostRequest};
     use chrono::Utc;
     use uuid::Uuid;
 
@@ -128,5 +130,18 @@ mod tests {
             request.thumbnail_url.as_deref(),
             Some("https://example.test/image.png")
         );
+        assert_eq!(request.slug, None);
+    }
+
+    #[test]
+    fn deserializes_optional_slug_from_camel_case_requests() {
+        let request: CreatePostRequest = serde_json::from_value(serde_json::json!({
+            "title": "Draft",
+            "contentMd": "Content",
+            "slug": "custom-draft"
+        }))
+        .unwrap();
+
+        assert_eq!(request.slug.as_deref(), Some("custom-draft"));
     }
 }

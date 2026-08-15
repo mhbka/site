@@ -9,6 +9,8 @@ import { blogApi } from '../../lib/api.ts';
 import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult, type FetchResult } from '../../lib/fetch-result.ts';
 import type { DraftPostSummary } from '../../lib/models/posts.ts';
+import Button from '../../components/ui/Button.astro';
+import Link from '../../components/ui/Link.astro';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session }, error } = await supabaseClient.auth.getSession();
@@ -40,21 +42,8 @@ if (session) {
 			main { width: 960px; }
 			.page-actions, .draft-actions { display: flex; gap: 0.75rem; }
 			.page-actions { margin-bottom: 2rem; }
-			.action, .publish-button, .delete-button {
-				display: inline-block;
-				padding: 0.6rem 1rem;
-				border: 0;
-				border-radius: 6px;
-				background: rgb(var(--accent));
-				color: white;
-				font: inherit;
-				text-decoration: none;
-				cursor: pointer;
-			}
-			.publish-button { background: #027a48; }
-			.delete-button { background: #b42318; }
-			ul { display: flex; flex-wrap: wrap; gap: 2rem; list-style: none; margin: 0; padding: 0; }
-			li { width: calc(50% - 1rem); }
+			ul { display: grid; gap: 2rem; list-style: none; margin: 0; padding: 0; }
+			li { width: 100%; text-align: left; }
 			.draft-card { display: block; text-decoration: none; }
 			img { width: 100%; margin-bottom: 0.5rem; border-radius: 12px; }
 			.title { margin: 0; color: rgb(var(--black)); line-height: 1; }
@@ -80,7 +69,6 @@ if (session) {
 			.confirm-dialog__cancel { background: rgb(var(--gray-light)); color: rgb(var(--black)); }
 			.confirm-dialog__error { min-height: 1.5rem; margin: 0.75rem 0 0; color: #b42318; }
 			@media (max-width: 720px) {
-				li { width: 100%; }
 				.page-actions, .draft-actions { flex-wrap: wrap; }
 			}
 		</style>
@@ -92,8 +80,8 @@ if (session) {
 				{isAuthor ? (
 					<>
 						<div class="page-actions">
-							<a class="action" href="/posts/new/">Create Post</a>
-							<a class="action" href="/blog/">View published posts</a>
+							<Link class="action ui-button" href="/posts/new/">Create Post</Link>
+							<Link class="action ui-button" href="/blog/">View published posts</Link>
 						</div>
 						{draftsResult?.error ? (
 							<FetchError message={draftsResult.error} />
@@ -101,15 +89,15 @@ if (session) {
 							<ul id="draft-list">
 								{draftsResult.data.map((post) => (
 									<li data-draft-id={post.id}>
-										<a class="draft-card" href={`/posts/edit/${post.id}/`}>
+									<Link class="draft-card" href={`/posts/edit/${post.id}/`}>
 											{post.thumbnailUrl && <img width="720" height="360" src={post.thumbnailUrl} alt="" />}
 											<h4 class="title">{post.title}</h4>
 											<p class="date">Updated <FormattedDate date={new Date(post.updatedAt)} /></p>
-										</a>
+									</Link>
 										<div class="draft-actions">
-											<a class="action" href={`/posts/edit/${post.id}/`}>Edit</a>
-											<button class="publish-button" type="button" data-publish-id={post.id}>Publish</button>
-											<button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</button>
+										<Link class="action ui-button" href={`/posts/edit/${post.id}/`}>Edit</Link>
+										<Button class="publish-button" variant="success" type="button" data-publish-id={post.id}>Publish</Button>
+										<Button class="delete-button" variant="danger" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</Button>
 										</div>
 									</li>
 								))}
@@ -123,8 +111,8 @@ if (session) {
 								<p class="confirm-dialog__message">This will remove “<span id="delete-draft-title"></span>”.</p>
 								<p class="confirm-dialog__error" id="delete-error" role="alert"></p>
 								<div class="confirm-dialog__actions">
-									<button class="action confirm-dialog__cancel" type="button" id="cancel-delete">Cancel</button>
-									<button class="delete-button" type="button" id="confirm-delete">Delete</button>
+									<Button class="action confirm-dialog__cancel" variant="secondary" type="button" id="cancel-delete">Cancel</Button>
+									<Button class="delete-button" variant="danger" type="button" id="confirm-delete">Delete</Button>
 								</div>
 							</div>
 						</dialog>

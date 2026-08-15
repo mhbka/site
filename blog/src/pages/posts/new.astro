@@ -27,8 +27,7 @@ if (session) {
 	</head>
 	<body>
 		<Header />
-		<main>
-			<h1>Create Post</h1>
+		<main class="post-page">
 			{isAuthor ? <PostEditor /> : <p>You must be logged in with author access to create a post.</p>}
 		</main>
 		<Footer />

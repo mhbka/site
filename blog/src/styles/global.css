@@ -1,3 +1,6 @@
+@import './markdown-content.css';
+@import './post-surface.css';
+
 /*
   The CSS in this style tag is based off of Bear Blog's default CSS.
   https://github.com/HermanMartinus/bearblog/blob/297026a877bc2ab2b3bdfbd6b9f7961c350917dd/templates/styles/blog/default.css
@@ -73,9 +76,6 @@ a:hover {
 p {
 	margin-bottom: 1em;
 }
-.prose p {
-	margin-bottom: 2em;
-}
 textarea {
 	width: 100%;
 	font-size: 16px;
@@ -83,6 +83,31 @@ textarea {
 input {
 	font-size: 16px;
 }
+.ui-input,
+.ui-textarea {
+	box-sizing: border-box;
+	font: inherit;
+}
+.ui-input {
+	padding: 0.7rem;
+	border: 1px solid rgb(var(--gray));
+	border-radius: 6px;
+}
+.ui-button {
+	display: inline-block;
+	padding: 0.6rem 1rem;
+	border: 0;
+	border-radius: 6px;
+	background: rgb(var(--accent));
+	color: white;
+	font: inherit;
+	text-decoration: none;
+	cursor: pointer;
+}
+.ui-button--success { background: #027a48; }
+.ui-button--danger { background: #b42318; }
+.ui-button--secondary { background: rgb(var(--gray-light)); color: rgb(var(--black)); }
+.ui-button:disabled { opacity: 0.6; cursor: wait; }
 table {
 	width: 100%;
 }

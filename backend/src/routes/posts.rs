@@ -197,7 +197,7 @@ async fn create_post(
 ) -> RouteResult<Json<Post>> {
     require_author(&app_state.pool, user.id).await?;
 
-    let slug = db::slugify(&req.title);
+    let slug = requested_slug(req.slug, &req.title)?;
     let post = sqlx::query_as::<_, Post>(
         r#"
         insert into posts (author_id, title, slug, content_md)
@@ -246,18 +246,23 @@ async fn update_post(
     let title = req.title.unwrap_or(existing.title);
     let content_md = req.content_md.unwrap_or(existing.content_md);
     let thumbnail_url = req.thumbnail_url.or(existing.thumbnail_url);
+    let slug = match req.slug {
+        Some(slug) => requested_slug(Some(slug), &title)?,
+        None => existing.slug,
+    };
 
     let post = sqlx::query_as::<_, Post>(
         r#"
         update posts set
-          title = $1, content_md = $2, thumbnail_url = $3
-        where id = $4 and author_id = $5
+          title = $1, content_md = $2, thumbnail_url = $3, slug = $4
+        where id = $5 and author_id = $6
         returning *
         "#,
     )
     .bind(&title)
     .bind(&content_md)
     .bind(&thumbnail_url)
+    .bind(&slug)
     .bind(id)
     .bind(user.id)
     .fetch_one(&app_state.pool)
@@ -276,6 +281,18 @@ async fn update_post(
     .await?;
 
     Ok(Json(post))
+}
+
+fn requested_slug(slug: Option<String>, title: &str) -> Result<String, RouteError> {
+    match slug {
+        Some(slug) if !slug.is_empty() && !db::is_valid_slug(&slug) => {
+            Err(RouteError::bad_request(
+                "slug may contain only letters, numbers, and hyphens",
+            ))
+        }
+        Some(slug) if !slug.is_empty() => Ok(slug),
+        _ => Ok(db::slugify(title)),
+    }
 }
 
 /// POST /id/:id/publish — publishes immediately.

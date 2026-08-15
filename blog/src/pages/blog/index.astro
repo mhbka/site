@@ -4,6 +4,7 @@ import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import FetchError from '../../components/FetchError.astro';
+import Link from '../../components/ui/Link.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { blogApi } from '../../lib/api.ts';
 import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
@@ -38,30 +39,19 @@ if (session) {
 				width: 960px;
 			}
 			ul {
-				display: flex;
-				flex-wrap: wrap;
+				display: grid;
 				gap: 2rem;
 				list-style-type: none;
 				margin: 0;
 				padding: 0;
 			}
 			ul li {
-				width: calc(50% - 1rem);
+				width: 100%;
+				text-align: left;
 			}
 			ul li * {
 				text-decoration: none;
 				transition: 0.2s ease;
-			}
-			ul li:first-child {
-				width: 100%;
-				margin-bottom: 1rem;
-				text-align: center;
-			}
-			ul li:first-child img {
-				width: 100%;
-			}
-			ul li:first-child .title {
-				font-size: 2.369rem;
 			}
 			ul li img {
 				margin-bottom: 0.5rem;
@@ -91,27 +81,9 @@ if (session) {
 				gap: 0.75rem;
 				margin-bottom: 2rem;
 			}
-			.post-action {
-				display: inline-block;
-				padding: 0.6rem 1rem;
-				border-radius: 6px;
-				background: rgb(var(--accent));
-				color: white;
-				text-decoration: none;
-			}
 			@media (max-width: 720px) {
 				ul {
 					gap: 0.5em;
-				}
-				ul li {
-					width: 100%;
-					text-align: center;
-				}
-				ul li:first-child {
-					margin-bottom: 0;
-				}
-				ul li:first-child .title {
-					font-size: 1.563em;
 				}
 			}
 		</style>
@@ -122,8 +94,8 @@ if (session) {
 			<section>
 				{isAuthor && (
 					<div class="post-actions">
-						<a class="post-action" href="/posts/new/">Create Post</a>
-						<a class="post-action" href="/blog/drafts/">View drafts</a>
+						<Link class="post-action ui-button" href="/posts/new/">Create Post</Link>
+						<Link class="post-action ui-button" href="/blog/drafts/">View drafts</Link>
 					</div>
 				)}
 				{result.error ? (
@@ -132,7 +104,7 @@ if (session) {
 					<ul>
 						{result.data?.map((post) => (
 							<li>
-								<a href={`/blog/${post.slug}/`}>
+								<Link href={`/blog/${post.slug}/`}>
 									{post.thumbnailUrl && (
 										<img width="720" height="360" src={post.thumbnailUrl} alt="" />
 									)}
@@ -140,7 +112,7 @@ if (session) {
 									<p class="date">
 										<FormattedDate date={new Date(post.publishedAt)} />
 									</p>
-								</a>
+								</Link>
 							</li>
 						))}
 					</ul>

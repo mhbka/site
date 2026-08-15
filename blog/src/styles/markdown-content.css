@@ -1,0 +1,98 @@
+/*
+ * Shared typography contract for Markdown rendered by Astro and edited by
+ * Milkdown. Keep this scoped so application UI does not inherit post styles.
+ */
+.markdown-content {
+	color: rgb(var(--gray-dark));
+}
+
+.markdown-content :where(h1, h2, h3, h4, h5, h6),
+.markdown-content .milkdown-theme-nord :where(h1, h2, h3, h4, h5, h6) {
+	margin: 2rem 0 0.75rem;
+	color: rgb(var(--black));
+	line-height: 1.2;
+}
+
+.markdown-content :where(h1), .markdown-content .milkdown-theme-nord :where(h1) { font-size: 3.052em; }
+.markdown-content :where(h2), .markdown-content .milkdown-theme-nord :where(h2) { font-size: 2.441em; }
+.markdown-content :where(h3), .markdown-content .milkdown-theme-nord :where(h3) { font-size: 1.953em; }
+.markdown-content :where(h4), .markdown-content .milkdown-theme-nord :where(h4) { font-size: 1.563em; }
+.markdown-content :where(h5), .markdown-content .milkdown-theme-nord :where(h5) { font-size: 1.25em; }
+.markdown-content :where(h6), .markdown-content .milkdown-theme-nord :where(h6) { font-size: 1em; }
+
+.markdown-content :where(p, ul, ol, pre, blockquote, table, figure),
+.markdown-content .milkdown-theme-nord :where(p, ul, ol, pre, blockquote, table, figure) {
+	margin: 0 0 2rem;
+}
+
+.markdown-content :where(ul, ol),
+.markdown-content .milkdown-theme-nord :where(ul, ol) {
+	padding-left: 1.5rem;
+}
+
+.markdown-content :where(li + li),
+.markdown-content .milkdown-theme-nord :where(li + li) {
+	margin-top: 0.4rem;
+}
+
+.markdown-content :where(a),
+.markdown-content .milkdown-theme-nord :where(a) {
+	color: var(--accent);
+}
+
+.markdown-content :where(img),
+.markdown-content .milkdown-theme-nord :where(img) {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	border-radius: 8px;
+}
+
+.markdown-content :where(code),
+.markdown-content .milkdown-theme-nord :where(code) {
+	padding: 2px 5px;
+	border-radius: 2px;
+	background-color: rgb(var(--gray-light));
+}
+
+.markdown-content :where(pre),
+.markdown-content .milkdown-theme-nord :where(pre) {
+	padding: 1.5em;
+	border-radius: 8px;
+	overflow-x: auto;
+	background-color: rgb(var(--gray-light));
+}
+
+.markdown-content :where(pre code),
+.markdown-content .milkdown-theme-nord :where(pre code) {
+	padding: 0;
+	background: transparent;
+}
+
+.markdown-content :where(blockquote),
+.markdown-content .milkdown-theme-nord :where(blockquote) {
+	margin-left: 0;
+	padding-left: 1.25rem;
+	border-left: 4px solid var(--accent);
+	font-size: 1.333em;
+}
+
+.markdown-content :where(table),
+.markdown-content .milkdown-theme-nord :where(table) {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.markdown-content :where(th, td),
+.markdown-content .milkdown-theme-nord :where(th, td) {
+	padding: 0.5rem;
+	border: 1px solid rgb(var(--gray-light));
+	text-align: left;
+}
+
+.markdown-content :where(hr),
+.markdown-content .milkdown-theme-nord :where(hr) {
+	margin: 2rem 0;
+	border: 0;
+	border-top: 1px solid rgb(var(--gray-light));
+}

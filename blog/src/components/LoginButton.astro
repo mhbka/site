@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types';
 import { createSupabaseServerClient } from '../lib/auth/supabase';
+import Button from './ui/Button.astro';
 type Props = HTMLAttributes<'button'>;
 const { class: className, ...props } = Astro.props;
 
@@ -42,9 +43,9 @@ else {
 	document.querySelector('[data-login-button]')?.addEventListener('click', buttonCallback);
 </script>
 
-<button data-login-button class:list={[className]} {...props}>
+<Button data-login-button class:list={[className]} {...props}>
 	{buttonText}
-</button>
+</Button>
 <style>
 	button {
 		display: inline-block;
