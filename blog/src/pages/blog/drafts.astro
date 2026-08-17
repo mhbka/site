@@ -97,8 +97,8 @@ if (session) {
 									</Link>
 										<div class="draft-actions">
 										<Link class="action ui-button" href={`/posts/edit/${post.id}/`}>Edit</Link>
-										<Button class="publish-button" variant="success" type="button" data-publish-id={post.id}>Publish</Button>
-										<Button class="delete-button" variant="danger" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</Button>
+										<Button class="publish-button" type="button" data-publish-id={post.id}>Publish</Button>
+										<Button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</Button>
 										</div>
 									</li>
 								))}
@@ -112,8 +112,8 @@ if (session) {
 								<p class="confirm-dialog__message">This will remove “<span id="delete-draft-title"></span>”.</p>
 								<p class="confirm-dialog__error" id="delete-error" role="alert"></p>
 								<div class="confirm-dialog__actions">
-									<Button class="action confirm-dialog__cancel" variant="secondary" type="button" id="cancel-delete">Cancel</Button>
-									<Button class="delete-button" variant="danger" type="button" id="confirm-delete">Delete</Button>
+									<Button class="action confirm-dialog__cancel" type="button" id="cancel-delete">Cancel</Button>
+									<Button class="delete-button" type="button" id="confirm-delete">Delete</Button>
 								</div>
 							</div>
 						</dialog>

@@ -3,6 +3,20 @@
 .post-header { margin-bottom: 1rem; padding: 1rem 0; text-align: left; line-height: 1; }
 .post-header h1 { margin: 0 0 0.5em; }
 .post-meta { margin: 0 0 0.5rem; color: rgb(var(--gray)); }
-.post-meta__updated { display: block; margin-top: 0.5rem; font-style: italic; }
+.post-metadata { display: block; margin-top: 0.5rem; font-style: italic; }
+.post-title { 
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    outline: 0;
+    background: transparent;
+    color: rgb(var(--black));
+    font: inherit;
+    font-size: 3.052em;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: left; 
+}
 
 @media (max-width: 720px) { .post-page { padding: 1rem; } }

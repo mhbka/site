@@ -9,7 +9,7 @@ import MoveToDraftButton from '../components/MoveToDraftButton.astro';
 
 interface Props {
 	title: string;
-	publishedAt?: Date;
+	createdAt?: Date;
 	updatedAt?: Date;
 	thumbnailUrl?: string | null;
 	content?: string;
@@ -19,7 +19,7 @@ interface Props {
 	isAuthor?: boolean;
 }
 
-const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage, postId, isLoggedIn = false, isAuthor = false } = Astro.props;
+const { title, createdAt, updatedAt, thumbnailUrl, content, errorMessage, postId, isLoggedIn = false, isAuthor = false } = Astro.props;
 ---
 
 <html lang="en">
@@ -50,19 +50,13 @@ const { title, publishedAt, updatedAt, thumbnailUrl, content, errorMessage, post
 				</div>
 				<div class="post-prose">
 					<div class="post-header">
+						<h1 class="post-title">{title}</h1>
 						<div class="post-meta">
-							{publishedAt && <FormattedDate date={publishedAt} />}
-							{
-								updatedAt && publishedAt && updatedAt.valueOf() !== publishedAt.valueOf() && (
-									<div class="post-meta__updated">
-										Last updated on <FormattedDate date={updatedAt} />
-									</div>
-								)
-							}
+							{createdAt && <div class="post-metadata">Created on <FormattedDate date={createdAt} includeTime /></div>}
+							{updatedAt && <div class="post-metadata">Last updated on <FormattedDate date={updatedAt} includeTime /></div>}
 						</div>
-						<h1>{title}</h1>
-						<hr />
 						{isAuthor && postId && <MoveToDraftButton postId={postId} />}
+						<hr />
 					</div>
 					{content && <div class="markdown-content" set:html={content} />}
 					{postId && <Comments postId={postId} />}

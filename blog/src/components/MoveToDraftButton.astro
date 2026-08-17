@@ -8,7 +8,7 @@ interface Props {
 const { postId } = Astro.props;
 ---
 
-<Button variant="secondary" type="button" data-move-to-draft-id={postId}>Move to draft</Button>
+<Button type="button" data-move-to-draft-id={postId}>Move to draft</Button>
 
 <script>
 	import { blogApi } from '../lib/api.ts';

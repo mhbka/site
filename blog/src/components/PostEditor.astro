@@ -15,20 +15,12 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 
 <form class="post-prose post-editor" data-post-editor data-post-id={post?.id}>
 	<header class="post-header">
-		<p class="post-meta">Draft</p>
-		{
-			createdAt && (
-				<div class="post-meta">
-					<FormattedDate date={createdAt} />
-					{
-						updatedAt && updatedAt.valueOf() !== createdAt.valueOf() && (
-							<div class="post-meta__updated">Last updated on <FormattedDate date={updatedAt} /></div>
-						)
-					}
-				</div>
-			)
-		}
-		<Input id="post-title" class="post-title-input" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
+		<p class="post-meta">[Draft]</p>
+		<Input id="post-title" class="post-title" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
+		<div class="post-meta">
+			{createdAt && <div class="post-metadata">Created on <FormattedDate date={createdAt} includeTime /></div>}
+			{updatedAt && <div class="post-metadata">Last updated on <FormattedDate date={updatedAt} includeTime /></div>}
+		</div>
 		<hr />
 	</header>
 
@@ -110,7 +102,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 			const item = document.createElement('li');
 			const removeButton = document.createElement('button');
 			removeButton.type = 'button';
-			removeButton.className = 'tag';
+			removeButton.className = 'ui-button tag';
 			removeButton.setAttribute('aria-label', `Remove ${tag} tag`);
 			removeButton.dataset.tag = tag;
 			removeButton.textContent = `${tag} ×`;
@@ -247,7 +239,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		display: grid;
 		gap: 1rem;
 	}
-	:global(.post-title-input) {
+	:global(.post-title) {
 		width: 100%;
 		padding: 0;
 		border: 0;
@@ -261,7 +253,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		line-height: 1.2;
 		text-align: left;
 	}
-	:global(.post-title-input)::placeholder,
+	:global(.post-title)::placeholder,
 	.tag-input :global(.ui-input)::placeholder,
 	.content-placeholder {
 		color: rgb(var(--gray));

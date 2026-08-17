@@ -70,8 +70,9 @@ b {
 a {
 	color: var(--accent);
 }
-a:hover {
-	color: var(--accent);
+a:hover,
+.ui-button:hover {
+	color: rgb(var(--gray));
 }
 p {
 	margin-bottom: 1em;
@@ -98,15 +99,12 @@ input {
 	padding: 0.6rem 1rem;
 	border: 0;
 	border-radius: 6px;
-	background: rgb(var(--accent));
+	background: rgb(var(--gray-dark));
 	color: white;
 	font: inherit;
 	text-decoration: none;
 	cursor: pointer;
 }
-.ui-button--success { background: #027a48; }
-.ui-button--danger { background: #b42318; }
-.ui-button--secondary { background: rgb(var(--gray-light)); color: rgb(var(--black)); }
 .ui-button:disabled { opacity: 0.6; cursor: wait; }
 table {
 	width: 100%;
