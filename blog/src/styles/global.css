@@ -24,17 +24,22 @@ body {
 	margin: 0;
 	padding: 0;
 	text-align: left;
-	background: linear-gradient(var(--gray-gradient)) no-repeat;
-	background-size: 100% 600px;
+	background: #d1d5db;
 	word-wrap: break-word;
 	overflow-wrap: break-word;
 	color: rgb(var(--gray-dark));
 	font-size: 20px;
 	line-height: 1.7;
 }
+header,
+main,
+footer {
+	box-sizing: border-box;
+	width: 60%;
+	margin-inline: auto;
+	background: white;
+}
 main {
-	width: 720px;
-	max-width: calc(100% - 2em);
 	margin: auto;
 	padding: 3em 1em;
 }
@@ -141,7 +146,12 @@ hr {
 		font-size: 18px;
 	}
 	main {
+		width: 100%;
 		padding: 1em;
+	}
+	header,
+	footer {
+		width: 100%;
 	}
 }
 

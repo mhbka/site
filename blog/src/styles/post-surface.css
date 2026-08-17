@@ -1,5 +1,5 @@
-.post-page { width: calc(100% - 2rem); max-width: 100%; margin: 0; padding: 3rem 1rem; }
-.post-prose { width: 720px; max-width: calc(100% - 2rem); margin: auto; padding: 1rem; }
+.post-page { padding: 3rem 1rem; }
+.post-prose { padding: 1rem; }
 .post-header { margin-bottom: 1rem; padding: 1rem 0; text-align: left; line-height: 1; }
 .post-header h1 { margin: 0 0 0.5em; }
 .post-meta { margin: 0 0 0.5rem; color: rgb(var(--gray)); }
