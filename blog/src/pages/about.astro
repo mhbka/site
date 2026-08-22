@@ -1,5 +1,6 @@
 ---
-import Layout from '../layouts/BlogPost.astro';
+import BaseHead from '../components/BaseHead.astro';
+import PageLayout from '../components/PageLayout.astro';
 import { createSupabaseServerClient } from '../lib/auth/supabase.ts';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
@@ -7,11 +8,16 @@ const { data: { session } } = await supabaseClient.auth.getSession();
 const isLoggedIn = Boolean(session);
 ---
 
-<Layout
-	title="About Me"
-	isLoggedIn={isLoggedIn}
->
-	<p>
-		meow
-	</p>
-</Layout>
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title={`about`}  />
+	</head>
+	<body>
+		<PageLayout isLoggedIn={isLoggedIn} title="about">
+			<p>
+				meow
+			</p>
+		</PageLayout>
+	</body>
+</html>

@@ -4,12 +4,12 @@
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
-import { SITE_TITLE } from '../consts';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
 import { Font } from 'astro:assets';
 
 interface Props {
 	title: string;
-	description: string;
+	description?: string;
 	image?: ImageMetadata;
 }
 
@@ -38,8 +38,8 @@ const { title, description, image = FallbackImage } = Astro.props;
 <link rel="canonical" href={canonicalURL} />
 
 <!-- Primary Meta Tags -->
-<title>{title}</title>
-<meta name="description" content={description} />
+<title>{`${title} ~ ${SITE_TITLE}`}</title>
+<meta name="description" content={description ?? SITE_DESCRIPTION} />
 
 <!-- Open Graph / Facebook -->
 <meta property="og:type" content="website" />

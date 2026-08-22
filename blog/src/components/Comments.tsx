@@ -187,7 +187,7 @@ export default function Comments({ postId }: Props) {
 	const roots = childrenByParent.get(null) ?? [];
 	return (
 		<section className="comments" aria-labelledby="comments-heading">
-			<h2 id="comments-heading">Comments</h2>
+			<h2 id="comments-heading">comments</h2>
 			<p className="comment-status" aria-live="polite">{status}</p>
 			<form className="comment-form" onSubmit={submitNewComment}>
 				<Textarea id="new-comment" name="body" rows={4} maxLength={5000} required />

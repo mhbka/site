@@ -6,7 +6,7 @@ interface Props extends HTMLAttributes<'button'> {
 }
 
 const { class: className, isLoggedIn = false, ...props } = Astro.props;
-const buttonText = isLoggedIn ? 'Logout' : 'Login';
+const buttonText = isLoggedIn ? 'logout' : 'login';
 ---
 
 <script>

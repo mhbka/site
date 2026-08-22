@@ -1,10 +1,8 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
 import FetchError from '../../components/FetchError.astro';
-import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
-import Header from '../../components/Header.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
+import PageLayout from '../../components/PageLayout.astro';
 import { blogApi } from '../../lib/api.ts';
 import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult, type FetchResult } from '../../lib/fetch-result.ts';
@@ -38,7 +36,7 @@ if (session) {
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`Drafts | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={"drafts"}  />
 		<style>
 			.page-actions, .draft-actions { display: flex; gap: 0.75rem; }
 			.page-actions { margin-bottom: 2rem; }
@@ -74,14 +72,12 @@ if (session) {
 		</style>
 	</head>
 	<body>
-		<Header isLoggedIn={isLoggedIn} />
-		<main>
-			<section>
-				{isAuthor ? (
+		<PageLayout isLoggedIn={isLoggedIn} title="drafts">
+			{isAuthor ? (
 					<>
 						<div class="page-actions">
-							<Link class="action ui-button" href="/posts/new/">Create Post</Link>
-							<Link class="action ui-button" href="/blog/">View published posts</Link>
+							<Link class="action ui-button" href="/posts/new/">create post</Link>
+							<Link class="action ui-button" href="/blog/">view published posts</Link>
 						</div>
 						{draftsResult?.error ? (
 							<FetchError message={draftsResult.error} />
@@ -95,9 +91,9 @@ if (session) {
 											<p class="date">Updated <FormattedDate date={new Date(post.updatedAt)} /></p>
 									</Link>
 										<div class="draft-actions">
-										<Link class="action ui-button" href={`/posts/edit/${post.id}/`}>Edit</Link>
-										<Button class="publish-button" type="button" data-publish-id={post.id}>Publish</Button>
-										<Button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>Delete</Button>
+										<Link class="action ui-button" href={`/posts/edit/${post.id}/`}>edit</Link>
+										<Button class="publish-button" type="button" data-publish-id={post.id}>publish</Button>
+										<Button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>delete</Button>
 										</div>
 									</li>
 								))}
@@ -107,22 +103,20 @@ if (session) {
 						)}
 						<dialog class="confirm-dialog" id="delete-dialog" aria-labelledby="delete-dialog-title">
 							<div class="confirm-dialog__content">
-								<h2 class="confirm-dialog__title" id="delete-dialog-title">Delete draft?</h2>
+								<h2 class="confirm-dialog__title" id="delete-dialog-title">delete draft?</h2>
 								<p class="confirm-dialog__message">This will remove “<span id="delete-draft-title"></span>”.</p>
 								<p class="confirm-dialog__error" id="delete-error" role="alert"></p>
 								<div class="confirm-dialog__actions">
-									<Button class="action confirm-dialog__cancel" type="button" id="cancel-delete">Cancel</Button>
-									<Button class="delete-button" type="button" id="confirm-delete">Delete</Button>
+									<Button class="action confirm-dialog__cancel" type="button" id="cancel-delete">cancel</Button>
+									<Button class="delete-button" type="button" id="confirm-delete">delete</Button>
 								</div>
 							</div>
 						</dialog>
 					</>
-				) : (
-					<p>You must be logged in with author access to view drafts.</p>
-				)}
-			</section>
-		</main>
-		<Footer />
+			) : (
+				<p>You must be logged in with author access to view drafts.</p>
+			)}
+		</PageLayout>
 		<script>
 			import { blogApi } from '../../lib/api.ts';
 			import { createSupabaseBrowserClient } from '../../lib/auth/supabase.ts';

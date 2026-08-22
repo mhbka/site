@@ -303,12 +303,12 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		border-radius: 6px;
 		overflow: hidden;
 	}
-	.editor-surface:focus-within {
-		box-shadow: 0 0 0 2px rgb(var(--accent));
-	}
 	.editor-surface :global(.milkdown) {
 		min-height: 24rem;
 		padding: 0;
+	}
+	.editor-surface :global(.ProseMirror) {
+		outline: 0;
 	}
 	.post-settings {
 		color: rgb(var(--gray));

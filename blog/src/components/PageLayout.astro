@@ -1,0 +1,33 @@
+---
+import Footer from './Footer.astro';
+import Header from './Header.astro';
+import PageTop from './PageTop.astro';
+
+interface Props {
+	isLoggedIn?: boolean;
+	mainClass?: string;
+	title?: string;
+}
+
+const { isLoggedIn = false, mainClass, title } = Astro.props;
+---
+
+<div class="site-layout">
+	<Header isLoggedIn={isLoggedIn} />
+	<div class="page-content">
+		<PageTop><slot name="page-top" /></PageTop>
+		<main class:list={['page-main', mainClass]}>
+			{title && (
+				<header class="page-heading">
+					<h1 class="page-title">{title}</h1>
+					<hr />
+				</header>
+			)}
+			<div class="page-body">
+				<slot />
+			</div>
+			<hr />
+		</main>
+		<Footer />
+	</div>
+</div>

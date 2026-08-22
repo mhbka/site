@@ -31,25 +31,43 @@ body {
 	font-size: 20px;
 	line-height: 1.7;
 }
-header,
-main,
-footer {
+.site-layout {
+	display: grid;
+	grid-template-columns: minmax(12rem, 16rem) 45vw;
+	gap: 2rem;
+	justify-content: center;
+	padding: 2rem 1rem;
+}
+.site-header {
+	align-self: start;
+	position: sticky;
+	top: 2rem;
+}
+.page-content {
 	box-sizing: border-box;
-	width: 60%;
-	margin-inline: auto;
+	min-width: 0;
 	background: white;
+	padding: 1rem;
 }
-main {
-	margin: auto;
-	padding: 3em 1em;
+.page-top-off {
+	box-sizing: border-box;
+	min-height: 6rem;
+	padding: 1rem;
 }
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+.page-main {
+	padding: 2em 1em;
+}
+.page-heading {
+	margin-bottom: 2rem;
+}
+.page-body {
+	margin-bottom: 2rem;
+}
+.page-title {
 	margin: 0 0 0.5rem 0;
+}
+h1, h2, h3, h4, h5, h6 {
+	margin: 0 0 0 0;
 	color: rgb(var(--black));
 	line-height: 1.2;
 }
@@ -145,13 +163,18 @@ hr {
 	body {
 		font-size: 18px;
 	}
-	main {
-		width: 100%;
-		padding: 1em;
+	.site-layout {
+		display: block;
+		padding: 0;
 	}
-	header,
-	footer {
-		width: 100%;
+	.site-header {
+		position: static;
+	}
+	.page-top {
+		min-height: 2rem;
+	}
+	.page-main {
+		padding: 1em;
 	}
 }
 

@@ -1,12 +1,10 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
-import Footer from '../../components/Footer.astro';
 import FormattedDate from '../../components/FormattedDate.astro';
-import Header from '../../components/Header.astro';
+import PageLayout from '../../components/PageLayout.astro';
 import FetchError from '../../components/FetchError.astro';
 import Link from '../../components/ui/Link.astro';
 import MoveToDraftButton from '../../components/MoveToDraftButton.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 import { blogApi } from '../../lib/api.ts';
 import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult } from '../../lib/fetch-result.ts';
@@ -35,7 +33,7 @@ if (session) {
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+		<BaseHead title={"blog"}  />
 		<style>
 			ul {
 				display: grid;
@@ -89,41 +87,37 @@ if (session) {
 		</style>
 	</head>
 	<body>
-		<Header isLoggedIn={isLoggedIn} />
-		<main>
-			<section>
-				{isAuthor && (
-					<div class="post-actions">
-						<Link class="post-action ui-button" href="/posts/new/">Create Post</Link>
-						<Link class="post-action ui-button" href="/blog/drafts/">View drafts</Link>
-					</div>
-				)}
-				{result.error ? (
-					<FetchError message={result.error} />
-				) : (
-					<ul>
-						{result.data?.map((post) => (
-							<li>
-								<Link href={`/blog/${post.slug}/`}>
-									{post.thumbnailUrl && (
-										<img width="720" height="360" src={post.thumbnailUrl} alt="" />
-									)}
-									<h4 class="title">{post.title}</h4>
-									<p class="date">
-										<FormattedDate date={new Date(post.publishedAt)} />
-									</p>
-								</Link>
-								{isAuthor && (
-									<div class="post-list-actions">
-										<MoveToDraftButton postId={post.id} />
-									</div>
+		<PageLayout isLoggedIn={isLoggedIn} title="blog">
+			{isAuthor && (
+				<div class="post-actions">
+					<Link class="post-action ui-button" href="/posts/new/">create post</Link>
+					<Link class="post-action ui-button" href="/blog/drafts/">view drafts</Link>
+				</div>
+			)}
+			{result.error ? (
+				<FetchError message={result.error} />
+			) : (
+				<ul>
+					{result.data?.map((post) => (
+						<li>
+							<Link href={`/blog/${post.slug}/`}>
+								{post.thumbnailUrl && (
+									<img width="720" height="360" src={post.thumbnailUrl} alt="" />
 								)}
-							</li>
-						))}
-					</ul>
-				)}
-			</section>
-		</main>
-		<Footer />
+								<h4 class="title">{post.title}</h4>
+								<p class="date">
+									<FormattedDate date={new Date(post.publishedAt)} />
+								</p>
+							</Link>
+							{isAuthor && (
+								<div class="post-list-actions">
+									<MoveToDraftButton postId={post.id} />
+								</div>
+							)}
+						</li>
+					))}
+				</ul>
+			)}
+		</PageLayout>
 	</body>
 </html>

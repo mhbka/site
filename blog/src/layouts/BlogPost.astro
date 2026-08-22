@@ -1,9 +1,8 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import FetchError from '../components/FetchError.astro';
-import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
-import Header from '../components/Header.astro';
+import PageLayout from '../components/PageLayout.astro';
 import Comments from '../components/Comments.astro';
 import MoveToDraftButton from '../components/MoveToDraftButton.astro';
 
@@ -39,23 +38,22 @@ const { title, createdAt, updatedAt, thumbnailUrl, content, errorMessage, postId
 	</head>
 
 	<body>
-		<Header isLoggedIn={isLoggedIn} />
-		<main class="post-page">
+		<PageLayout isLoggedIn={isLoggedIn} mainClass="post-page">
 			{errorMessage ? (
-				<div class="post-prose"><FetchError message={errorMessage} /></div>
+				<div><FetchError message={errorMessage} /></div>
 			) : (
 			<article>
 				<div class="hero-image">
 					{thumbnailUrl && <img width="1020" height="510" src={thumbnailUrl} alt="" />}
 				</div>
-				<div class="post-prose">
+				<div>
 					<div class="post-header">
 						<h1 class="post-title">{title}</h1>
 						<div class="post-meta">
 							{createdAt && <div class="post-metadata">Created on <FormattedDate date={createdAt} includeTime /></div>}
 							{updatedAt && <div class="post-metadata">Last updated on <FormattedDate date={updatedAt} includeTime /></div>}
+							{isAuthor && postId && <MoveToDraftButton postId={postId} />}
 						</div>
-						{isAuthor && postId && <MoveToDraftButton postId={postId} />}
 						<hr />
 					</div>
 					{content && <div class="markdown-content" set:html={content} />}
@@ -63,7 +61,6 @@ const { title, createdAt, updatedAt, thumbnailUrl, content, errorMessage, postId
 				</div>
 			</article>
 			)}
-		</main>
-		<Footer />
+		</PageLayout>
 	</body>
 </html>

@@ -1,9 +1,7 @@
 ---
 import BaseHead from '../../../components/BaseHead.astro';
-import Footer from '../../../components/Footer.astro';
-import Header from '../../../components/Header.astro';
+import PageLayout from '../../../components/PageLayout.astro';
 import PostEditor from '../../../components/PostEditor.astro';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../../../consts';
 import { blogApi } from '../../../lib/api.ts';
 import { createSupabaseServerClient } from '../../../lib/auth/supabase.ts';
 import type { Post } from '../../../lib/models/posts.ts';
@@ -26,13 +24,11 @@ if (session) {
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title={`Edit Post | ${SITE_TITLE}`} description={SITE_DESCRIPTION} />
+		<BaseHead title={"edit post"}  />
 	</head>
 	<body>
-		<Header isLoggedIn={isLoggedIn} />
-		<main class="post-page">
+		<PageLayout isLoggedIn={isLoggedIn} mainClass="post-page">
 			{post ? <PostEditor post={post} /> : <p>This post could not be found or you do not have access to edit it.</p>}
-		</main>
-		<Footer />
+		</PageLayout>
 	</body>
 </html>

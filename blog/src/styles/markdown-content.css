@@ -8,21 +8,21 @@
 
 .markdown-content :where(h1, h2, h3, h4, h5, h6),
 .markdown-content .milkdown-theme-nord :where(h1, h2, h3, h4, h5, h6) {
-	margin: 2rem 0 0.75rem;
+	margin: 1.5rem 0 0.5rem;
 	color: rgb(var(--black));
 	line-height: 1.2;
 }
 
-.markdown-content :where(h1), .markdown-content .milkdown-theme-nord :where(h1) { font-size: 3.052em; }
-.markdown-content :where(h2), .markdown-content .milkdown-theme-nord :where(h2) { font-size: 2.441em; }
-.markdown-content :where(h3), .markdown-content .milkdown-theme-nord :where(h3) { font-size: 1.953em; }
-.markdown-content :where(h4), .markdown-content .milkdown-theme-nord :where(h4) { font-size: 1.563em; }
-.markdown-content :where(h5), .markdown-content .milkdown-theme-nord :where(h5) { font-size: 1.25em; }
+.markdown-content :where(h1), .markdown-content .milkdown-theme-nord :where(h1) { font-size: 2.25em; }
+.markdown-content :where(h2), .markdown-content .milkdown-theme-nord :where(h2) { font-size: 1.65em; }
+.markdown-content :where(h3), .markdown-content .milkdown-theme-nord :where(h3) { font-size: 1.2em; }
+.markdown-content :where(h4), .markdown-content .milkdown-theme-nord :where(h4) { font-size: 1.1em; }
+.markdown-content :where(h5), .markdown-content .milkdown-theme-nord :where(h5) { font-size: 1.05em; }
 .markdown-content :where(h6), .markdown-content .milkdown-theme-nord :where(h6) { font-size: 1em; }
 
 .markdown-content :where(p, ul, ol, pre, blockquote, table, figure),
 .markdown-content .milkdown-theme-nord :where(p, ul, ol, pre, blockquote, table, figure) {
-	margin: 0 0 2rem;
+	margin: 0 0 1rem;
 }
 
 .markdown-content :where(ul, ol),
@@ -32,7 +32,7 @@
 
 .markdown-content :where(li + li),
 .markdown-content .milkdown-theme-nord :where(li + li) {
-	margin-top: 0.4rem;
+	margin-top: 0.25rem;
 }
 
 .markdown-content :where(a),
@@ -92,7 +92,7 @@
 
 .markdown-content :where(hr),
 .markdown-content .milkdown-theme-nord :where(hr) {
-	margin: 2rem 0;
+	margin: 1.5rem 0;
 	border: 0;
 	border-top: 1px solid rgb(var(--gray-light));
 }
