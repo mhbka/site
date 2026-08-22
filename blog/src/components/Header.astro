@@ -14,7 +14,6 @@ const { isLoggedIn = false } = Astro.props;
 		<div class="internal-links">
 			<HeaderLink href="/">home</HeaderLink>
 			<HeaderLink href="/blog">blog</HeaderLink>
-			<HeaderLink href="/about">about</HeaderLink>
 		</div>
 		<div class="social-links">
 			<LoginButton isLoggedIn={isLoggedIn} />
@@ -25,8 +24,8 @@ const { isLoggedIn = false } = Astro.props;
 <style>
 	header {
 		padding: 1.5em 1em;
-		background: white;
-		box-shadow: 0 2px 8px rgba(var(--black), 5%);
+		background: var(--color-surface);
+		box-shadow: var(--shadow-header);
 	}
 	h2 {
 		margin: 0;
@@ -45,7 +44,7 @@ const { isLoggedIn = false } = Astro.props;
 	}
 	nav a {
 		padding: 0.25em 0;
-		color: var(--black);
+		color: var(--color-heading);
 		text-decoration: none;
 	}
 	nav a.active {

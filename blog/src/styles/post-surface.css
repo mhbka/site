@@ -6,7 +6,7 @@
     align-items: flex-start;
     gap: 0.25rem;
     margin: 0.5rem 0 1rem 0;
-    color: rgb(var(--gray)); 
+    color: var(--color-muted);
 }
 .post-metadata { display: block; margin-top: 0.5rem; font-style: italic; }
 .post-title { 
@@ -15,8 +15,8 @@
     border: 0;
     border-radius: 0;
     outline: 0;
-    background: transparent;
-    color: rgb(var(--black));
+    background: var(--color-transparent);
+    color: var(--color-heading);
     font: inherit;
     font-size: 3.052em;
     font-weight: 700;

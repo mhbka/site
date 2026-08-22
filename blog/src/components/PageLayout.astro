@@ -2,14 +2,16 @@
 import Footer from './Footer.astro';
 import Header from './Header.astro';
 import PageTop from './PageTop.astro';
+import PageTitle from './PageTitle.astro';
 
 interface Props {
 	isLoggedIn?: boolean;
 	mainClass?: string;
 	title?: string;
+	titleClass?: string;
 }
 
-const { isLoggedIn = false, mainClass, title } = Astro.props;
+const { isLoggedIn = false, mainClass, title, titleClass } = Astro.props;
 ---
 
 <div class="site-layout">
@@ -19,7 +21,7 @@ const { isLoggedIn = false, mainClass, title } = Astro.props;
 		<main class:list={['page-main', mainClass]}>
 			{title && (
 				<header class="page-heading">
-					<h1 class="page-title">{title}</h1>
+					<PageTitle title={title} className={titleClass} />
 					<hr />
 				</header>
 			)}

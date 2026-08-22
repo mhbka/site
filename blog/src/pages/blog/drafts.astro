@@ -44,14 +44,14 @@ if (session) {
 			li { width: 100%; text-align: left; }
 			.draft-card { display: block; text-decoration: none; }
 			img { width: 100%; margin-bottom: 0.5rem; border-radius: 12px; }
-			.title { margin: 0; color: rgb(var(--black)); line-height: 1; }
-			.date { margin: 0.5rem 0; color: rgb(var(--gray)); }
-			.draft-card:hover .title { color: rgb(var(--accent)); }
-			.empty { color: rgb(var(--gray)); }
+			.title { margin: 0; color: var(--color-heading); line-height: 1; }
+			.date { margin: 0.5rem 0; color: var(--color-muted); }
+			.draft-card:hover .title { color: var(--color-accent); }
+			.empty { color: var(--color-muted); }
 			.confirm-dialog {
-				--dialog-surface: white;
-				--dialog-text: rgb(var(--black));
-				--dialog-backdrop: rgb(0 0 0 / 0.45);
+				--dialog-surface: var(--color-surface);
+				--dialog-text: var(--color-heading);
+				--dialog-backdrop: var(--color-overlay);
 				width: min(32rem, calc(100% - 2rem));
 				padding: 0;
 				border: 0;
@@ -64,15 +64,15 @@ if (session) {
 			.confirm-dialog__title, .confirm-dialog__message { margin: 0; }
 			.confirm-dialog__message { margin-top: 0.75rem; }
 			.confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
-			.confirm-dialog__cancel { background: rgb(var(--gray-light)); color: rgb(var(--black)); }
-			.confirm-dialog__error { min-height: 1.5rem; margin: 0.75rem 0 0; color: #b42318; }
+			.confirm-dialog__cancel { background: var(--color-subtle); color: var(--color-heading); }
+			.confirm-dialog__error { min-height: 1.5rem; margin: 0.75rem 0 0; color: var(--color-danger); }
 			@media (max-width: 720px) {
 				.page-actions, .draft-actions { flex-wrap: wrap; }
 			}
 		</style>
 	</head>
 	<body>
-		<PageLayout isLoggedIn={isLoggedIn} title="drafts">
+		<PageLayout isLoggedIn={isLoggedIn} title="drafts" titleClass="title-wave">
 			{isAuthor ? (
 					<>
 						<div class="page-actions">

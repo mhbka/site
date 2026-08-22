@@ -59,19 +59,19 @@ if (session) {
 			}
 			.title {
 				margin: 0;
-				color: rgb(var(--black));
+				color: var(--color-heading);
 				line-height: 1;
 			}
 			.date {
 				margin: 0;
-				color: rgb(var(--gray));
+				color: var(--color-muted);
 			}
 			ul li a:hover h4,
 			ul li a:hover .date {
-				color: rgb(var(--accent));
+				color: var(--color-accent);
 			}
 			ul a:hover img {
-				box-shadow: var(--box-shadow);
+				box-shadow: var(--shadow-page);
 			}
 			.post-actions {
 				display: flex;
@@ -87,7 +87,7 @@ if (session) {
 		</style>
 	</head>
 	<body>
-		<PageLayout isLoggedIn={isLoggedIn} title="blog">
+		<PageLayout isLoggedIn={isLoggedIn} title="blog" titleClass="title-wave">
 			{isAuthor && (
 				<div class="post-actions">
 					<Link class="post-action ui-button" href="/posts/new/">create post</Link>

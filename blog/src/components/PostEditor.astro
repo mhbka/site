@@ -245,8 +245,8 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		border: 0;
 		border-radius: 0;
 		outline: 0;
-		background: transparent;
-		color: rgb(var(--black));
+		background: var(--color-transparent);
+		color: var(--color-heading);
 		font: inherit;
 		font-size: 3.052em;
 		font-weight: 700;
@@ -256,7 +256,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	:global(.post-title)::placeholder,
 	.tag-input :global(.ui-input)::placeholder,
 	.content-placeholder {
-		color: rgb(var(--gray));
+		color: var(--color-muted);
 		opacity: 1;
 	}
 	.post-properties {
@@ -272,7 +272,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	}
 	.tag-input:focus-within {
 		border-radius: 6px;
-		box-shadow: 0 0 0 2px rgb(var(--accent));
+		box-shadow: 0 0 0 2px var(--color-accent);
 	}
 	.tag-input :global(.ui-input) {
 		min-width: 12rem;
@@ -280,7 +280,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		padding: 0.3rem;
 		border: 0;
 		outline: 0;
-		background: transparent;
+		background: var(--color-transparent);
 	}
 	.tag-list {
 		display: flex;
@@ -293,8 +293,8 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	.tag {
 		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
-		background: rgb(var(--gray-light));
-		color: rgb(var(--gray-dark));
+		background: var(--color-subtle);
+		color: var(--color-text);
 		font-size: 0.8rem;
 	}
 	.editor-surface {
@@ -311,7 +311,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		outline: 0;
 	}
 	.post-settings {
-		color: rgb(var(--gray));
+		color: var(--color-muted);
 		font-size: 0.8rem;
 	}
 	.post-settings summary { cursor: pointer; }
@@ -335,6 +335,6 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		gap: 1rem;
 	}
 	:global(.image-uploading) {
-		color: rgb(var(--gray));
+		color: var(--color-muted);
 	}
 </style>

@@ -1,0 +1,64 @@
+---
+interface Props {
+	title: string;
+	className?: string;
+}
+
+const { title, className } = Astro.props;
+const hasWave = className?.split(/\s+/).includes('title-wave');
+const letters = Array.from(title);
+---
+
+<h1 class:list={['page-title', className]} aria-label={hasWave ? title : undefined}>
+	{hasWave ? (
+		letters.map((letter, index) => (
+			<span class="title-wave-letter" aria-hidden="true" style={`--letter-index: ${index}`}>
+				{letter === ' ' ? '\u00a0' : letter}
+			</span>
+		))
+	) : title}
+</h1>
+
+<script>
+	const hoverRadius = 96;
+	const maxHoverLift = 18;
+
+	function resetLetterLifts(title: HTMLElement) {
+		title.querySelectorAll<HTMLElement>('.title-wave-letter').forEach((letter) => {
+			letter.style.removeProperty('--hover-offset');
+		});
+	}
+
+	function updateLetterLifts(title: HTMLElement, event: PointerEvent) {
+		title.querySelectorAll<HTMLElement>('.title-wave-letter').forEach((letter) => {
+			const bounds = letter.getBoundingClientRect();
+			const letterCenterX = bounds.left + bounds.width / 2;
+			const letterCenterY = bounds.top + bounds.height / 2;
+			const distance = Math.hypot(event.clientX - letterCenterX, event.clientY - letterCenterY);
+			const proximity = Math.max(0, 1 - distance / hoverRadius);
+			const lift = maxHoverLift * proximity ** 2;
+
+			letter.style.setProperty('--hover-offset', `${-lift}px`);
+		});
+	}
+
+	function isNearTitle(title: HTMLElement, event: PointerEvent) {
+		const bounds = title.getBoundingClientRect();
+		const closestX = Math.max(bounds.left, Math.min(event.clientX, bounds.right));
+		const closestY = Math.max(bounds.top, Math.min(event.clientY, bounds.bottom));
+
+		return Math.hypot(event.clientX - closestX, event.clientY - closestY) <= hoverRadius;
+	}
+
+	if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+		document.querySelectorAll<HTMLElement>('.title-wave').forEach((title) => {
+			document.addEventListener('pointermove', (event) => {
+				if (isNearTitle(title, event)) {
+					updateLetterLifts(title, event);
+				} else {
+					resetLetterLifts(title);
+				}
+			});
+	});
+	}
+</script>

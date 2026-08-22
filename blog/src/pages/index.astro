@@ -2,10 +2,13 @@
 import BaseHead from '../components/BaseHead.astro';
 import PageLayout from '../components/PageLayout.astro';
 import { createSupabaseServerClient } from '../lib/auth/supabase.ts';
+import { renderMarkdown } from '../lib/markdown.ts';
+import homeMarkdown from '../content/index.md?raw';
 
 const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
 const { data: { session } } = await supabaseClient.auth.getSession();
 const isLoggedIn = Boolean(session);
+const content = await renderMarkdown(homeMarkdown);
 ---
 
 <!doctype html>
@@ -14,10 +17,8 @@ const isLoggedIn = Boolean(session);
 		<BaseHead title={"home"}  />
 	</head>
 	<body>
-		<PageLayout isLoggedIn={isLoggedIn} title="kyunkyun.moe">
-			<p>
-				Welcome!
-			</p>
+		<PageLayout isLoggedIn={isLoggedIn} title="kyunkyun.moe" titleClass="title-wave">
+			<div class="markdown-content" set:html={content} />
 		</PageLayout>
 	</body>
 </html>
