@@ -1,6 +1,7 @@
 ---
 import HeaderLink from './HeaderLink.astro';
 import LoginButton from './LoginButton.astro';
+import ThemeSelector from './ThemeSelector.astro';
 
 interface Props {
 	isLoggedIn?: boolean;
@@ -14,10 +15,8 @@ const { isLoggedIn = false } = Astro.props;
 		<div class="internal-links">
 			<HeaderLink href="/">home</HeaderLink>
 			<HeaderLink href="/blog">blog</HeaderLink>
-		</div>
-		<div class="social-links">
+			<ThemeSelector />
 			<LoginButton isLoggedIn={isLoggedIn} />
-		
 		</div>
 	</nav>
 </header>
@@ -63,8 +62,11 @@ const { isLoggedIn = false } = Astro.props;
 		display: flex;
 	}
 	.social-links {
+		display: grid;
 		align-items: center;
+		justify-items: start;
 		flex-wrap: wrap;
+		gap: 0.75rem;
 	}
 	@media (max-width: 720px) {
 		header { padding: 1em; }

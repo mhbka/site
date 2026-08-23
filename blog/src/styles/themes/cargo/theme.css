@@ -1,0 +1,30 @@
+@import './overrides.css';
+
+:root,
+:root[data-theme='cargo'] {
+	--font-body: var(--font-atkinson);
+	--color-accent: #adba71;
+	--color-accent-dark: #8f9e55;
+	--color-text: #b7c481;
+	--color-heading: #cbd69a;
+	--color-muted: #899654;
+	--color-subtle: #5c4932;
+	--color-page-background: #21160f;
+	--color-surface: #4a3627;
+	--color-danger: #ce745c;
+	--color-overlay: rgb(17 11 8 / 70%);
+	--color-transparent: transparent;
+	--shadow-page: 0 2px 6px rgb(17 11 8 / 35%), 0 8px 24px rgb(17 11 8 / 43%), 0 16px 32px rgb(17 11 8 / 43%);
+	--shadow-header: 0 2px 8px rgb(17 11 8 / 16%);
+	--border-width: 1px;
+	--blockquote-border-width: 4px;
+	--radius-control: 0;
+	--radius-input: 6px;
+	--radius-code: 2px;
+	--radius-media: 8px;
+	--radius-panel: 12px;
+	--radius-focus: 6px;
+	--radius-tag: 0;
+	--focus-ring-width: 2px;
+	--comment-border-width: 2px;
+}

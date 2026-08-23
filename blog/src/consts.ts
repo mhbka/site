@@ -3,3 +3,9 @@
 
 export const SITE_TITLE = 'kyunkyun.moe';
 export const SITE_DESCRIPTION = '-';
+
+export const THEMES = [
+	{ id: 'cargo', label: 'cargo' },
+] as const;
+
+export const DEFAULT_THEME_ID = THEMES[0].id;

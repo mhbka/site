@@ -271,8 +271,8 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		padding: 0.4rem;
 	}
 	.tag-input:focus-within {
-		border-radius: 6px;
-		box-shadow: 0 0 0 2px var(--color-accent);
+		border-radius: var(--radius-focus);
+		box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent);
 	}
 	.tag-input :global(.ui-input) {
 		min-width: 12rem;
@@ -292,7 +292,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	}
 	.tag {
 		padding: 0.2rem 0.55rem;
-		border-radius: 999px;
+		border-radius: var(--radius-tag);
 		background: var(--color-subtle);
 		color: var(--color-text);
 		font-size: 0.8rem;
@@ -300,7 +300,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	.editor-surface {
 		position: relative;
 		min-height: 24rem;
-		border-radius: 6px;
+		border-radius: var(--radius-focus);
 		overflow: hidden;
 	}
 	.editor-surface :global(.milkdown) {

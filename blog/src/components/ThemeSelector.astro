@@ -1,0 +1,45 @@
+---
+import { DEFAULT_THEME_ID, THEMES } from '../consts';
+import Select from './ui/Select.astro';
+---
+
+<label class="theme-selector">
+	<span class="sr-only">Theme</span>
+	<Select data-theme-selector aria-label="Theme">
+		{THEMES.map((theme) => <option value={theme.id}>{theme.label}</option>)}
+	</Select>
+</label>
+
+<script is:inline define:vars={{ defaultThemeId: DEFAULT_THEME_ID, themeIds: THEMES.map((theme) => theme.id) }}>
+	const themeSelector = document.querySelector('[data-theme-selector]');
+	const themeStorageKey = 'site-theme';
+	const savedTheme = localStorage.getItem(themeStorageKey);
+	const activeTheme = themeIds.includes(savedTheme) ? savedTheme : defaultThemeId;
+
+	document.documentElement.dataset.theme = activeTheme;
+	if (themeSelector instanceof HTMLSelectElement) {
+		themeSelector.value = activeTheme;
+		themeSelector.addEventListener('change', () => {
+			document.documentElement.dataset.theme = themeSelector.value;
+			localStorage.setItem(themeStorageKey, themeSelector.value);
+		});
+	}
+</script>
+
+<style>
+	.theme-selector {
+		display: block;
+		position: relative;
+	}
+	.theme-selector :global(.ui-select) {
+		appearance: none;
+		background-image:
+			linear-gradient(45deg, transparent 50%, var(--color-surface) 50%),
+			linear-gradient(135deg, var(--color-surface) 50%, transparent 50%);
+		background-position:
+			calc(100% - 1.2rem) 50%,
+			calc(100% - 0.85rem) 50%;
+		background-repeat: no-repeat;
+		background-size: 0.35rem 0.35rem;
+	}
+</style>

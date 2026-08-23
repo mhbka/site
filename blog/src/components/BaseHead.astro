@@ -4,7 +4,7 @@
 import '../styles/global.css';
 import type { ImageMetadata } from 'astro';
 import FallbackImage from '../assets/blog-placeholder-1.jpg';
-import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+import { DEFAULT_THEME_ID, SITE_DESCRIPTION, SITE_TITLE, THEMES } from '../consts';
 import { Font } from 'astro:assets';
 
 interface Props {
@@ -21,6 +21,10 @@ const { title, description, image = FallbackImage } = Astro.props;
 <!-- Global Metadata -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
+<script is:inline define:vars={{ defaultThemeId: DEFAULT_THEME_ID, themeIds: THEMES.map((theme) => theme.id) }}>
+	const savedTheme = localStorage.getItem('site-theme');
+	document.documentElement.dataset.theme = themeIds.includes(savedTheme) ? savedTheme : defaultThemeId;
+</script>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <link rel="icon" href="/favicon.ico" />
 <link rel="sitemap" href="/sitemap-index.xml" />

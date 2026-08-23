@@ -43,7 +43,7 @@ if (session) {
 			ul { display: grid; gap: 2rem; list-style: none; margin: 0; padding: 0; }
 			li { width: 100%; text-align: left; }
 			.draft-card { display: block; text-decoration: none; }
-			img { width: 100%; margin-bottom: 0.5rem; border-radius: 12px; }
+			img { width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); }
 			.title { margin: 0; color: var(--color-heading); line-height: 1; }
 			.date { margin: 0.5rem 0; color: var(--color-muted); }
 			.draft-card:hover .title { color: var(--color-accent); }
@@ -55,7 +55,7 @@ if (session) {
 				width: min(32rem, calc(100% - 2rem));
 				padding: 0;
 				border: 0;
-				border-radius: 12px;
+				border-radius: var(--radius-panel);
 				background: var(--dialog-surface);
 				color: var(--dialog-text);
 			}

@@ -1,0 +1,11 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+type Props = HTMLAttributes<'select'>;
+
+const { class: className, ...props } = Astro.props;
+---
+
+<select class:list={['ui-select', className]} {...props}>
+	<slot />
+</select>
