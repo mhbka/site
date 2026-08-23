@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties, type SubmitEvent } from 'react';
 
 import './Comments.css';
 
@@ -43,7 +43,7 @@ function CommentNode({
 	const isDeleted = Boolean(comment.deletedAt);
 	const children = childrenByParent.get(comment.id) ?? [];
 
-	async function submitReply(event: FormEvent<HTMLFormElement>) {
+	async function submitReply(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = event.currentTarget;
 		const body = new FormData(form).get('body')?.toString().trim();
@@ -52,7 +52,7 @@ function CommentNode({
 		form.reset();
 	}
 
-	async function submitEdit(event: FormEvent<HTMLFormElement>) {
+	async function submitEdit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const body = new FormData(event.currentTarget).get('body')?.toString().trim();
 		if (!body) return;
@@ -171,7 +171,7 @@ export default function Comments({ postId }: Props) {
 		setStatus('Comment deleted.');
 	}
 
-	async function submitNewComment(event: FormEvent<HTMLFormElement>) {
+	async function submitNewComment(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = event.currentTarget;
 		const body = new FormData(form).get('body')?.toString().trim();

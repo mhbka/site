@@ -1,0 +1,14 @@
+h1, h2, h3, h4, h5, h6 { margin: 0; color: var(--color-heading); line-height: 1.2; }
+h1 { font-size: 3.052em; } h2 { font-size: 2.441em; } h3 { font-size: 1.953em; } h4 { font-size: 1.563em; } h5 { font-size: 1.25em; }
+strong, b { font-weight: 700; }
+a { color: var(--color-accent); }
+a:hover { color: var(--color-muted); }
+p { margin-bottom: 1em; }
+img { max-width: 100%; height: auto; border-radius: var(--radius-media); }
+hr { border: none; border-top: var(--border-width) solid var(--color-subtle); }
+
+.page-title { margin: 0 0 0.5rem; }
+.title-wave { white-space: pre-wrap; }
+.title-wave-letter { display: inline-block; animation: title-letter-wave 3.5s ease-in-out infinite; animation-delay: calc(var(--letter-index) * 120ms); will-change: transform; }
+@keyframes title-letter-wave { 0%, 100% { transform: translateY(var(--hover-offset, 0px)); } 50% { transform: translateY(calc(var(--hover-offset, 0px) - 0.16em)); } }
+@media (prefers-reduced-motion: reduce) { .title-wave-letter { animation: none; } }

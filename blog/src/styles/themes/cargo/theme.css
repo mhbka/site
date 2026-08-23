@@ -4,7 +4,6 @@
 :root[data-theme='cargo'] {
 	--font-body: var(--font-atkinson);
 	--color-accent: #adba71;
-	--color-accent-dark: #8f9e55;
 	--color-text: #b7c481;
 	--color-heading: #cbd69a;
 	--color-muted: #899654;

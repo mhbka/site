@@ -25,6 +25,7 @@ pub struct Post {
     pub status: PostStatus,
     pub published_at: Option<DateTime<Utc>>,
     pub thumbnail_url: Option<String>,
+    pub tags: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
@@ -57,6 +58,7 @@ pub struct CreatePostRequest {
     pub title: String,
     pub content_md: String,
     pub slug: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -66,6 +68,7 @@ pub struct UpdatePostRequest {
     pub content_md: Option<String>,
     pub thumbnail_url: Option<String>,
     pub slug: Option<String>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[cfg(test)]
@@ -121,7 +124,8 @@ mod tests {
     fn deserializes_post_requests_from_camel_case() {
         let request: UpdatePostRequest = serde_json::from_value(serde_json::json!({
             "contentMd": "Updated content",
-            "thumbnailUrl": "https://example.test/image.png"
+            "thumbnailUrl": "https://example.test/image.png",
+            "tags": ["rust"]
         }))
         .unwrap();
 
@@ -131,6 +135,7 @@ mod tests {
             Some("https://example.test/image.png")
         );
         assert_eq!(request.slug, None);
+		assert_eq!(request.tags, Some(vec!["rust".to_string()]));
     }
 
     #[test]
@@ -138,10 +143,12 @@ mod tests {
         let request: CreatePostRequest = serde_json::from_value(serde_json::json!({
             "title": "Draft",
             "contentMd": "Content",
-            "slug": "custom-draft"
+            "slug": "custom-draft",
+            "tags": ["astro"]
         }))
         .unwrap();
 
         assert_eq!(request.slug.as_deref(), Some("custom-draft"));
+		assert_eq!(request.tags, Some(vec!["astro".to_string()]));
     }
 }

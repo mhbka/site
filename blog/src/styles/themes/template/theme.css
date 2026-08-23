@@ -8,7 +8,6 @@
 :root[data-theme='theme-id'] {
 	--font-body: var(--font-atkinson);
 	--color-accent: #000;
-	--color-accent-dark: #000;
 	--color-text: #000;
 	--color-heading: #000;
 	--color-muted: #000;

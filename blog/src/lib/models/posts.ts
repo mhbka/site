@@ -21,6 +21,7 @@ export interface Post extends Omit<PostSummary, 'publishedAt'> {
 	contentMd: string;
 	status: PostStatus;
 	publishedAt: string | null;
+	tags: string[];
 	createdAt: string;
 	updatedAt: string;
 }
@@ -29,6 +30,7 @@ export interface CreatePostInput {
 	title: string;
 	contentMd: string;
 	slug?: string;
+	tags?: string[];
 }
 
 export interface UpdatePostInput {
@@ -36,4 +38,5 @@ export interface UpdatePostInput {
 	contentMd?: string;
 	thumbnailUrl?: string | null;
 	slug?: string;
+	tags?: string[];
 }

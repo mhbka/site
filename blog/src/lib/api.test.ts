@@ -37,16 +37,17 @@ test('sends authenticated write requests to the matching backend route', async (
 	});
 });
 
-test('sends an optional custom slug when saving a post', async () => {
+test('sends an optional custom slug and tags when saving a post', async () => {
 	const mock = createFetch(Response.json({ id: 'post-1', slug: 'custom-slug' }));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
 
-	await api.createPost({ title: 'Hello', contentMd: 'Content', slug: 'custom-slug' }, 'access-token');
+	await api.createPost({ title: 'Hello', contentMd: 'Content', slug: 'custom-slug', tags: ['astro', 'css'] }, 'access-token');
 
 	assert.deepEqual(JSON.parse(String(mock.calls[0][1]?.body)), {
 		title: 'Hello',
 		contentMd: 'Content',
 		slug: 'custom-slug',
+		tags: ['astro', 'css'],
 	});
 });
 

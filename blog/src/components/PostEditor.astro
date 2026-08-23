@@ -13,7 +13,7 @@ const createdAt = post ? new Date(post.createdAt) : undefined;
 const updatedAt = post ? new Date(post.updatedAt) : undefined;
 ---
 
-<form class="post-prose post-editor" data-post-editor data-post-id={post?.id}>
+<form class="post-editor" data-post-editor data-post-id={post?.id} data-initial-tags={JSON.stringify(post?.tags ?? [])}>
 	<header class="post-header">
 		<p class="post-meta">[Draft]</p>
 		<Input id="post-title" class="post-title" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
@@ -80,7 +80,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	const placeholder = contentPlaceholder;
 	const slugInput = slug;
 
-	let tags: string[] = [];
+	let tags: string[] = JSON.parse(form.dataset.initialTags ?? '[]');
 
 	function slugError(value: string) {
 		return value && !/^[A-Za-z0-9-]+$/.test(value)
@@ -119,12 +119,14 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		}
 	}
 
+	renderTags();
+
 	tagsInput.addEventListener('input', () => {
 		tagsInput.value = normalizeTag(tagsInput.value);
 	});
 
 	tagsInput.addEventListener('keydown', (event) => {
-		if (event.key === ' ') {
+		if (event.key === ' ' || event.key === 'Enter') {
 			event.preventDefault();
 			commitTag();
 		}
@@ -197,6 +199,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 
 	form.addEventListener('submit', async (event) => {
 		event.preventDefault();
+		commitTag();
 		const contentMd = editor.action(getMarkdown()).trim();
 		const postTitle = title.value.trim();
 		const postSlug = slugInput.value.trim();
@@ -218,10 +221,10 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 			if (!session) throw new Error('Please log in before saving a post.');
 
 			if (postId) {
-				await blogApi.updatePost(postId, { title: postTitle, contentMd, slug: postSlug }, session.access_token);
+				await blogApi.updatePost(postId, { title: postTitle, contentMd, slug: postSlug, tags }, session.access_token);
 				status.textContent = 'Changes saved.';
 			} else {
-				const post = await blogApi.createPost({ title: postTitle, contentMd, slug: postSlug }, session.access_token);
+				const post = await blogApi.createPost({ title: postTitle, contentMd, slug: postSlug, tags }, session.access_token);
 				postId = post.id;
 				history.replaceState(null, '', `/posts/edit/${encodeURIComponent(post.id)}`);
 				status.textContent = 'Draft created.';
@@ -238,20 +241,6 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	.post-editor {
 		display: grid;
 		gap: 1rem;
-	}
-	:global(.post-title) {
-		width: 100%;
-		padding: 0;
-		border: 0;
-		border-radius: 0;
-		outline: 0;
-		background: var(--color-transparent);
-		color: var(--color-heading);
-		font: inherit;
-		font-size: 3.052em;
-		font-weight: 700;
-		line-height: 1.2;
-		text-align: left;
 	}
 	:global(.post-title)::placeholder,
 	.tag-input :global(.ui-input)::placeholder,

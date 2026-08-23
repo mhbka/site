@@ -1,0 +1,30 @@
+/* Theme-independent site structure. */
+body {
+	margin: 0;
+	padding: 0;
+	text-align: left;
+	background: var(--color-page-background);
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	color: var(--color-text);
+	font-family: var(--font-body);
+	font-size: 20px;
+	line-height: 1.7;
+}
+
+.site-layout { display: grid; grid-template-columns: minmax(0, 1fr) 40vw minmax(0, 1fr); padding: 2rem 1rem; }
+.site-header { grid-column: 1; justify-self: end; width: min(16rem, calc(100% - 2rem)); margin-right: 2rem; align-self: start; position: sticky; top: 2rem; }
+.page-content { grid-column: 2; box-sizing: border-box; min-width: 0; background: var(--color-surface); padding: 1rem; }
+.page-top { box-sizing: border-box; min-height: 6rem; padding: 1rem; }
+.page-main { padding: 2em 1em; }
+.page-heading, .page-body { margin-bottom: 2rem; }
+
+@media (max-width: 720px) {
+	body { font-size: 18px; }
+	.site-layout { display: block; padding: 0; }
+	.site-header { position: static; }
+	.page-top { min-height: 2rem; }
+	.page-main { padding: 1em; }
+}
+
+.sr-only { border: 0; padding: 0; margin: 0; position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px 1px 1px 1px); clip: rect(1px, 1px, 1px, 1px); clip-path: inset(50%); white-space: nowrap; }

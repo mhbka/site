@@ -1,122 +1,45 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import PageLayout from '../../components/PageLayout.astro';
 import FetchError from '../../components/FetchError.astro';
+import Pagination from '../../components/Pagination.astro';
+import PostList from '../../components/PostList.astro';
 import Link from '../../components/ui/Link.astro';
-import MoveToDraftButton from '../../components/MoveToDraftButton.astro';
 import { blogApi } from '../../lib/api.ts';
-import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult } from '../../lib/fetch-result.ts';
+import { getPageAuth } from '../../lib/page-auth.ts';
+import { parsePage } from '../../lib/pagination.ts';
 
+const pageSize = 20;
+const page = parsePage(Astro.url.searchParams.get('page'));
 const result = await fetchResult(
-	() => blogApi.listPosts(1, 100),
+	() => blogApi.listPosts(page, pageSize + 1),
 	'We could not load the blog posts. Please try again shortly.',
 );
+const posts = result.data?.slice(0, pageSize) ?? [];
+const hasNext = (result.data?.length ?? 0) > pageSize;
 
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session }, error } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
-let isAuthor = false;
-
-if (session) {
-	try {
-		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
-	} catch (e) {
-		console.warn(`Failed to fetch isAuthor: ${e}`);
-	}
-} else {
-	console.warn(`Unable to get session; error: ${error}`)
-}
+const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead title={"blog"}  />
-		<style>
-			ul {
-				display: grid;
-				gap: 2rem;
-				list-style-type: none;
-				margin: 0;
-				padding: 0;
-			}
-			ul li {
-				width: 100%;
-				text-align: left;
-			}
-			ul li * {
-				text-decoration: none;
-				transition: 0.2s ease;
-			}
-			ul li img {
-				margin-bottom: 0.5rem;
-				border-radius: var(--radius-panel);
-			}
-			ul li a {
-				display: block;
-			}
-			.title {
-				margin: 0;
-				color: var(--color-heading);
-				line-height: 1;
-			}
-			.date {
-				margin: 0;
-				color: var(--color-muted);
-			}
-			ul li a:hover h4,
-			ul li a:hover .date {
-				color: var(--color-accent);
-			}
-			ul a:hover img {
-				box-shadow: var(--shadow-page);
-			}
-			.post-actions {
-				display: flex;
-				gap: 0.75rem;
-				margin-bottom: 2rem;
-			}
-			.post-list-actions { margin-top: 0.75rem; }
-			@media (max-width: 720px) {
-				ul {
-					gap: 0.5em;
-				}
-			}
-		</style>
 	</head>
 	<body>
 		<PageLayout isLoggedIn={isLoggedIn} title="blog" titleClass="title-wave">
 			{isAuthor && (
-				<div class="post-actions">
-					<Link class="post-action ui-button" href="/posts/new/">create post</Link>
-					<Link class="post-action ui-button" href="/blog/drafts/">view drafts</Link>
+				<div class="action-group">
+					<Link class="ui-button" href="/posts/new/">create post</Link>
+					<Link class="ui-button" href="/blog/drafts/">view drafts</Link>
 				</div>
 			)}
 			{result.error ? (
 				<FetchError message={result.error} />
 			) : (
-				<ul>
-					{result.data?.map((post) => (
-						<li>
-							<Link href={`/blog/${post.slug}/`}>
-								{post.thumbnailUrl && (
-									<img width="720" height="360" src={post.thumbnailUrl} alt="" />
-								)}
-								<h4 class="title">{post.title}</h4>
-								<p class="date">
-									<FormattedDate date={new Date(post.publishedAt)} />
-								</p>
-							</Link>
-							{isAuthor && (
-								<div class="post-list-actions">
-									<MoveToDraftButton postId={post.id} />
-								</div>
-							)}
-						</li>
-					))}
-				</ul>
+				<PostList posts={posts} variant="published" isAuthor={isAuthor} />
+				<Pagination page={page} hasNext={hasNext} />
 			)}
 		</PageLayout>
 	</body>

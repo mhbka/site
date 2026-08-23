@@ -5,6 +5,8 @@ However, I also intend to add some other potentially interesting features (thoug
 
 Thanks for visiting!
 
+![zako](./zako.gif)
+
 Links:
 - [Github](https://github.com/mhbka)
 - [Instagram](https://instagram.com/minami)

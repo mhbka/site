@@ -1,5 +1,7 @@
 /* Stable structure first; select the active theme with the final import. */
-@import './base/foundation.css';
+@import './base/site-shell.css';
+@import './base/typography.css';
+@import './base/ui.css';
 @import './base/markdown-content.css';
 @import './base/post-surface.css';
 @import './themes/index.css';

@@ -1,35 +1,27 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
 import FetchError from '../../components/FetchError.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import PageLayout from '../../components/PageLayout.astro';
 import { blogApi } from '../../lib/api.ts';
-import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
 import { fetchResult, type FetchResult } from '../../lib/fetch-result.ts';
 import type { DraftPostSummary } from '../../lib/models/posts.ts';
 import Button from '../../components/ui/Button.astro';
 import Link from '../../components/ui/Link.astro';
+import PostList from '../../components/PostList.astro';
+import { getPageAuth } from '../../lib/page-auth.ts';
 
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session }, error } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
-let isAuthor = false;
+const { isLoggedIn, isAuthor, accessToken } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 let draftsResult: FetchResult<DraftPostSummary[]> | undefined;
 
-if (session) {
+if (isAuthor && accessToken) {
 	try {
-		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
-		if (isAuthor) {
-			draftsResult = await fetchResult(
-				() => blogApi.listDrafts(session.access_token),
-				'We could not load your drafts. Please try again shortly.',
-			);
-		}
+		draftsResult = await fetchResult(
+			() => blogApi.listDrafts(accessToken),
+			'We could not load your drafts. Please try again shortly.',
+		);
 	} catch (e) {
 		console.warn(`Failed to load drafts: ${e}`);
 	}
-} else {
-	console.warn(`Unable to get session; error: ${error}`);
 }
 ---
 
@@ -38,15 +30,7 @@ if (session) {
 	<head>
 		<BaseHead title={"drafts"}  />
 		<style>
-			.page-actions, .draft-actions { display: flex; gap: 0.75rem; }
-			.page-actions { margin-bottom: 2rem; }
-			ul { display: grid; gap: 2rem; list-style: none; margin: 0; padding: 0; }
-			li { width: 100%; text-align: left; }
-			.draft-card { display: block; text-decoration: none; }
-			img { width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); }
-			.title { margin: 0; color: var(--color-heading); line-height: 1; }
-			.date { margin: 0.5rem 0; color: var(--color-muted); }
-			.draft-card:hover .title { color: var(--color-accent); }
+			.action-group { margin-bottom: 2rem; }
 			.empty { color: var(--color-muted); }
 			.confirm-dialog {
 				--dialog-surface: var(--color-surface);
@@ -66,38 +50,20 @@ if (session) {
 			.confirm-dialog__actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; }
 			.confirm-dialog__cancel { background: var(--color-subtle); color: var(--color-heading); }
 			.confirm-dialog__error { min-height: 1.5rem; margin: 0.75rem 0 0; color: var(--color-danger); }
-			@media (max-width: 720px) {
-				.page-actions, .draft-actions { flex-wrap: wrap; }
-			}
 		</style>
 	</head>
 	<body>
 		<PageLayout isLoggedIn={isLoggedIn} title="drafts" titleClass="title-wave">
 			{isAuthor ? (
 					<>
-						<div class="page-actions">
-							<Link class="action ui-button" href="/posts/new/">create post</Link>
-							<Link class="action ui-button" href="/blog/">view published posts</Link>
+						<div class="action-group">
+							<Link class="ui-button" href="/posts/new/">create post</Link>
+							<Link class="ui-button" href="/blog/">view published posts</Link>
 						</div>
 						{draftsResult?.error ? (
 							<FetchError message={draftsResult.error} />
 						) : draftsResult?.data?.length ? (
-							<ul id="draft-list">
-								{draftsResult.data.map((post) => (
-									<li data-draft-id={post.id}>
-									<Link class="draft-card" href={`/posts/edit/${post.id}/`}>
-											{post.thumbnailUrl && <img width="720" height="360" src={post.thumbnailUrl} alt="" />}
-											<h4 class="title">{post.title}</h4>
-											<p class="date">Updated <FormattedDate date={new Date(post.updatedAt)} /></p>
-									</Link>
-										<div class="draft-actions">
-										<Link class="action ui-button" href={`/posts/edit/${post.id}/`}>edit</Link>
-										<Button class="publish-button" type="button" data-publish-id={post.id}>publish</Button>
-										<Button class="delete-button" type="button" data-delete-id={post.id} data-delete-title={post.title}>delete</Button>
-										</div>
-									</li>
-								))}
-							</ul>
+							<PostList posts={draftsResult.data} variant="drafts" />
 						) : (
 							<p class="empty">You do not have any drafts yet.</p>
 						)}

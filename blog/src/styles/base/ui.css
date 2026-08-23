@@ -1,0 +1,10 @@
+textarea, input { font-size: 16px; }
+.ui-input, .ui-select, .ui-textarea { box-sizing: border-box; font: inherit; }
+.ui-input, .ui-textarea { padding: 0.7rem; border: var(--border-width) solid var(--color-muted); background: var(--color-page-background); color: var(--color-text); }
+.ui-input { border-radius: var(--radius-input); }
+.ui-textarea { width: 100%; border-radius: var(--radius-control); }
+.ui-button, .ui-select { display: inline-block; padding: 0.6rem 1rem; border: 0; border-radius: var(--radius-control); background-color: var(--color-text); color: var(--color-surface); font: inherit; text-decoration: none; cursor: pointer; }
+.ui-select { padding-right: 2.5rem; }
+.ui-button:hover, .ui-select:hover { color: var(--color-muted); }
+.ui-button:disabled { opacity: 0.6; cursor: wait; }
+.action-group { display: flex; flex-wrap: wrap; gap: 0.75rem; }

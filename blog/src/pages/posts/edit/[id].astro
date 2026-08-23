@@ -3,18 +3,15 @@ import BaseHead from '../../../components/BaseHead.astro';
 import PageLayout from '../../../components/PageLayout.astro';
 import PostEditor from '../../../components/PostEditor.astro';
 import { blogApi } from '../../../lib/api.ts';
-import { createSupabaseServerClient } from '../../../lib/auth/supabase.ts';
+import { getPageAuth } from '../../../lib/page-auth.ts';
 import type { Post } from '../../../lib/models/posts.ts';
 
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session } } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
+const { isLoggedIn, isAuthor, accessToken } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 let post: Post | undefined;
 
-if (session) {
+if (isAuthor && accessToken) {
 	try {
-		const { isAuthor } = await blogApi.getAuthorStatus(session.access_token);
-		if (isAuthor) post = await blogApi.getPostById(Astro.params.id ?? '', session.access_token);
+		post = await blogApi.getPostById(Astro.params.id ?? '', accessToken);
 	} catch (error) {
 		console.warn(`Unable to load post for editing: ${error}`);
 	}

@@ -2,21 +2,9 @@
 import BaseHead from '../../components/BaseHead.astro';
 import PageLayout from '../../components/PageLayout.astro';
 import PostEditor from '../../components/PostEditor.astro';
-import { blogApi } from '../../lib/api.ts';
-import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
+import { getPageAuth } from '../../lib/page-auth.ts';
 
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session } } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
-let isAuthor = false;
-
-if (session) {
-	try {
-		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
-	} catch (error) {
-		console.warn(`Unable to verify post author access: ${error}`);
-	}
-}
+const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 ---
 
 <!doctype html>

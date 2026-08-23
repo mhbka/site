@@ -1,0 +1,23 @@
+---
+import Link from './ui/Link.astro';
+
+interface Props {
+	page: number;
+	hasNext: boolean;
+}
+
+const { page, hasNext } = Astro.props;
+const pageUrl = (value: number) => value === 1 ? '/blog/' : `/blog/?page=${value}`;
+---
+
+{(page > 1 || hasNext) && (
+	<nav class="pagination" aria-label="Blog pages">
+		{page > 1 && <Link class="ui-button" href={pageUrl(page - 1)}>newer posts</Link>}
+		{hasNext && <Link class="ui-button" href={pageUrl(page + 1)}>older posts</Link>}
+	</nav>
+)}
+
+<style>
+	.pagination { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 2rem; }
+	.pagination :last-child { margin-left: auto; }
+</style>

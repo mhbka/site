@@ -105,7 +105,7 @@ async fn list_drafts(
 
 #[cfg(test)]
 mod tests {
-    use super::{ListPostsQuery, DEFAULT_PAGE_SIZE};
+    use super::{normalize_tags, ListPostsQuery, DEFAULT_PAGE_SIZE};
 
     #[test]
     fn uses_default_pagination_values() {
@@ -147,6 +147,19 @@ mod tests {
         }
         .pagination()
         .is_err());
+    }
+
+    #[test]
+    fn normalizes_and_deduplicates_tags() {
+        assert_eq!(
+            normalize_tags(vec![
+                "Astro".to_string(),
+                "Java Script".to_string(),
+                "astro".to_string(),
+                " ".to_string(),
+            ]),
+            vec!["astro", "javascript"],
+        );
     }
 
 }
@@ -199,10 +212,11 @@ async fn create_post(
     require_author(&app_state.pool, user.id).await?;
 
     let slug = requested_slug(req.slug, &req.title)?;
+    let tags = normalize_tags(req.tags.unwrap_or_default());
     let post = sqlx::query_as::<_, Post>(
         r#"
-        insert into posts (author_id, title, slug, content_md)
-        values ($1, $2, $3, $4)
+        insert into posts (author_id, title, slug, content_md, tags)
+        values ($1, $2, $3, $4, $5)
         returning *
         "#,
     )
@@ -210,6 +224,7 @@ async fn create_post(
     .bind(&req.title)
     .bind(&slug)
     .bind(&req.content_md)
+    .bind(&tags)
     .fetch_one(&app_state.pool)
     .await?;
 
@@ -251,12 +266,13 @@ async fn update_post(
         Some(slug) => requested_slug(Some(slug), &title)?,
         None => existing.slug,
     };
+    let tags = req.tags.map(normalize_tags).unwrap_or(existing.tags);
 
     let post = sqlx::query_as::<_, Post>(
         r#"
         update posts set
-          title = $1, content_md = $2, thumbnail_url = $3, slug = $4
-        where id = $5 and author_id = $6
+          title = $1, content_md = $2, thumbnail_url = $3, slug = $4, tags = $5
+        where id = $6 and author_id = $7
         returning *
         "#,
     )
@@ -264,6 +280,7 @@ async fn update_post(
     .bind(&content_md)
     .bind(&thumbnail_url)
     .bind(&slug)
+    .bind(&tags)
     .bind(id)
     .bind(user.id)
     .fetch_one(&app_state.pool)
@@ -294,6 +311,19 @@ fn requested_slug(slug: Option<String>, title: &str) -> Result<String, RouteErro
         Some(slug) if !slug.is_empty() => Ok(slug),
         _ => Ok(db::slugify(title)),
     }
+}
+
+fn normalize_tags(tags: Vec<String>) -> Vec<String> {
+    let mut normalized = Vec::new();
+
+    for tag in tags {
+        let tag = tag.to_lowercase().split_whitespace().collect::<String>();
+        if !tag.is_empty() && !normalized.contains(&tag) {
+            normalized.push(tag);
+        }
+    }
+
+    normalized
 }
 
 /// POST /id/:id/publish — publishes immediately.

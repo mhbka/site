@@ -26,15 +26,6 @@ const { isLoggedIn = false } = Astro.props;
 		background: var(--color-surface);
 		box-shadow: var(--shadow-header);
 	}
-	h2 {
-		margin: 0;
-		font-size: 1em;
-	}
-
-	h2 a,
-	h2 a.active {
-		text-decoration: none;
-	}
 	nav {
 		display: flex;
 		flex-direction: column;
@@ -57,23 +48,9 @@ const { isLoggedIn = false } = Astro.props;
 		display: grid;
 		gap: 0.75rem;
 	}
-	.social-links,
-	.social-links a {
-		display: flex;
-	}
-	.social-links {
-		display: grid;
-		align-items: center;
-		justify-items: start;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
 	@media (max-width: 720px) {
 		header { padding: 1em; }
 		nav { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem; }
 		.internal-links { display: flex; gap: 0.75rem; }
-		.social-links {
-			display: none;
-		}
 	}
 </style>

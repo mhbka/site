@@ -3,7 +3,7 @@ import BlogPost from '../../layouts/BlogPost.astro';
 import { blogApi } from '../../lib/api.ts';
 import { fetchResult } from '../../lib/fetch-result.ts';
 import { renderMarkdown } from '../../lib/markdown.ts';
-import { createSupabaseServerClient } from '../../lib/auth/supabase.ts';
+import { getPageAuth } from '../../lib/page-auth.ts';
 
 const result = await fetchResult(
 	() => blogApi.getPost(Astro.params.slug ?? ''),
@@ -12,18 +12,7 @@ const result = await fetchResult(
 const post = result.data;
 const content = post ? await renderMarkdown(post.contentMd) : undefined;
 const createdAt = post ? new Date(post.createdAt) : undefined;
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session } } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
-let isAuthor = false;
-
-if (session) {
-	try {
-		isAuthor = (await blogApi.getAuthorStatus(session.access_token)).isAuthor;
-	} catch (error) {
-		console.warn(`Failed to fetch isAuthor: ${error}`);
-	}
-}
+const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 ---
 
 <BlogPost

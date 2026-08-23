@@ -1,13 +1,11 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import PageLayout from '../components/PageLayout.astro';
-import { createSupabaseServerClient } from '../lib/auth/supabase.ts';
+import { getPageAuth } from '../lib/page-auth.ts';
 import { renderMarkdown } from '../lib/markdown.ts';
 import homeMarkdown from '../content/index.md?raw';
 
-const supabaseClient = createSupabaseServerClient(Astro.request, Astro.cookies);
-const { data: { session } } = await supabaseClient.auth.getSession();
-const isLoggedIn = Boolean(session);
+const { isLoggedIn } = await getPageAuth(Astro.request, Astro.cookies);
 const content = await renderMarkdown(homeMarkdown);
 ---
 

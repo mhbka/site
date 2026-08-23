@@ -1,0 +1,52 @@
+---
+import type { DraftPostSummary, PostSummary } from '../lib/models/posts.ts';
+import FormattedDate from './FormattedDate.astro';
+import MoveToDraftButton from './MoveToDraftButton.astro';
+import Button from './ui/Button.astro';
+import Link from './ui/Link.astro';
+
+interface Props {
+	posts: Array<PostSummary | DraftPostSummary>;
+	variant: 'published' | 'drafts';
+	isAuthor?: boolean;
+}
+
+const { posts, variant, isAuthor = false } = Astro.props;
+---
+
+<ul class="post-list" id={variant === 'drafts' ? 'draft-list' : undefined}>
+	{posts.map((post) => (
+		<li data-draft-id={variant === 'drafts' ? post.id : undefined}>
+			<Link class="post-card" href={variant === 'drafts' ? `/posts/edit/${post.id}/` : `/blog/${post.slug}/`}>
+				{post.thumbnailUrl && <img width="720" height="360" src={post.thumbnailUrl} alt="" />}
+				<h4 class="post-card__title">{post.title}</h4>
+				<p class="post-card__date">
+					{variant === 'drafts'
+						? <>Updated <FormattedDate date={new Date((post as DraftPostSummary).updatedAt)} /></>
+						: <FormattedDate date={new Date((post as PostSummary).publishedAt)} />}
+				</p>
+			</Link>
+			{isAuthor && variant === 'published' && <div class="post-list__actions"><MoveToDraftButton postId={post.id} /></div>}
+			{variant === 'drafts' && (
+				<div class="post-list__actions">
+					<Link class="ui-button" href={`/posts/edit/${post.id}/`}>edit</Link>
+					<Button type="button" data-publish-id={post.id}>publish</Button>
+					<Button type="button" data-delete-id={post.id} data-delete-title={post.title}>delete</Button>
+				</div>
+			)}
+		</li>
+	))}
+</ul>
+
+<style>
+	.post-list { display: grid; gap: 2rem; margin: 0; padding: 0; list-style: none; }
+	.post-list > li { width: 100%; text-align: left; }
+	.post-card { display: block; text-decoration: none; }
+	.post-card img { display: block; width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); transition: box-shadow 0.2s ease; }
+	.post-card__title { margin: 0; color: var(--color-heading); line-height: 1; transition: color 0.2s ease; }
+	.post-card__date { margin: 0.5rem 0; color: var(--color-muted); transition: color 0.2s ease; }
+	.post-card:hover .post-card__title, .post-card:hover .post-card__date { color: var(--color-accent); }
+	.post-card:hover img { box-shadow: var(--shadow-page); }
+	.post-list__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+	@media (max-width: 720px) { .post-list { gap: 0.5rem; } }
+</style>
