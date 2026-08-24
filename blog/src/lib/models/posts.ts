@@ -5,6 +5,7 @@ export interface PostSummary {
 	title: string;
 	slug: string;
 	thumbnailUrl: string | null;
+	tags: string[];
 	publishedAt: string;
 }
 
@@ -13,6 +14,7 @@ export interface DraftPostSummary {
 	title: string;
 	slug: string;
 	thumbnailUrl: string | null;
+	tags: string[];
 	updatedAt: string;
 }
 

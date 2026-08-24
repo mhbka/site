@@ -10,6 +10,7 @@ import PageTitle from '../components/PageTitle.astro';
 interface Props {
 	title: string;
 	createdAt?: Date;
+	publishedAt?: Date;
 	updatedAt?: Date;
 	thumbnailUrl?: string | null;
 	content?: string;
@@ -19,7 +20,7 @@ interface Props {
 	isAuthor?: boolean;
 }
 
-const { title, createdAt, updatedAt, thumbnailUrl, content, errorMessage, postId, isLoggedIn = false, isAuthor = false } = Astro.props;
+const { title, createdAt, publishedAt, updatedAt, thumbnailUrl, content, errorMessage, postId, isLoggedIn = false, isAuthor = false } = Astro.props;
 ---
 
 <html lang="en">
@@ -52,6 +53,7 @@ const { title, createdAt, updatedAt, thumbnailUrl, content, errorMessage, postId
 						<PageTitle title={title} className="post-title title-wave" />
 						<div class="post-meta">
 							{createdAt && <div class="post-metadata">Created on <FormattedDate date={createdAt} includeTime /></div>}
+							{publishedAt && <div class="post-metadata">Published on <FormattedDate date={publishedAt} includeTime /></div>}
 							{updatedAt && <div class="post-metadata">Last updated on <FormattedDate date={updatedAt} includeTime /></div>}
 							{isAuthor && postId && <MoveToDraftButton postId={postId} />}
 						</div>

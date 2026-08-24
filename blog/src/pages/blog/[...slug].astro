@@ -12,12 +12,14 @@ const result = await fetchResult(
 const post = result.data;
 const content = post ? await renderMarkdown(post.contentMd) : undefined;
 const createdAt = post ? new Date(post.createdAt) : undefined;
+const publishedAt = post?.publishedAt ? new Date(post.publishedAt) : undefined;
 const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 ---
 
 <BlogPost
 	title={post?.title ?? 'Blog post unavailable'}
 	createdAt={createdAt}
+	publishedAt={publishedAt}
 	updatedAt={post ? new Date(post.updatedAt) : undefined}
 	thumbnailUrl={post?.thumbnailUrl}
 	content={content}

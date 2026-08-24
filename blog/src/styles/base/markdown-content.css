@@ -9,7 +9,7 @@
 .markdown-content :where(h6), .markdown-content .milkdown-theme-nord :where(h6) { font-size: 1em; }
 .markdown-content :where(p, ul, ol, pre, blockquote, table, figure), .markdown-content .milkdown-theme-nord :where(p, ul, ol, pre, blockquote, table, figure) { margin: 0 0 1rem; }
 .markdown-content :where(ul, ol), .markdown-content .milkdown-theme-nord :where(ul, ol) { padding-left: 1.5rem; }
-.markdown-content :where(li + li), .markdown-content .milkdown-theme-nord :where(li + li) { margin-top: 0.25rem; }
+.markdown-content :where(li + li), .markdown-content .milkdown-theme-nord :where(li + li) { margin-top: 0.125rem; }
 .markdown-content :where(a), .markdown-content .milkdown-theme-nord :where(a) { color: var(--color-accent); }
 .markdown-content :where(img), .markdown-content .milkdown-theme-nord :where(img) { display: block; }
 .markdown-content :where(code), .markdown-content .milkdown-theme-nord :where(code) { padding: 2px 5px; border-radius: var(--radius-code); background-color: var(--color-subtle); }

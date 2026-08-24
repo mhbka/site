@@ -25,6 +25,7 @@ const { posts, variant, isAuthor = false } = Astro.props;
 						? <>Updated <FormattedDate date={new Date((post as DraftPostSummary).updatedAt)} /></>
 						: <FormattedDate date={new Date((post as PostSummary).publishedAt)} />}
 				</p>
+				{post.tags.length > 0 && <p class="post-card__tags">{post.tags.map((tag) => `#${tag}`).join(' ')}</p>}
 			</Link>
 			{isAuthor && variant === 'published' && <div class="post-list__actions"><MoveToDraftButton postId={post.id} /></div>}
 			{variant === 'drafts' && (
@@ -45,7 +46,8 @@ const { posts, variant, isAuthor = false } = Astro.props;
 	.post-card img { display: block; width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); transition: box-shadow 0.2s ease; }
 	.post-card__title { margin: 0; color: var(--color-heading); line-height: 1; transition: color 0.2s ease; }
 	.post-card__date { margin: 0.5rem 0; color: var(--color-muted); transition: color 0.2s ease; }
-	.post-card:hover .post-card__title, .post-card:hover .post-card__date { color: var(--color-accent); }
+	.post-card__tags { margin: -0.25rem 0 0; color: var(--color-muted); transition: color 0.2s ease; }
+	.post-card:hover .post-card__title, .post-card:hover .post-card__date, .post-card:hover .post-card__tags { color: var(--color-accent); }
 	.post-card:hover img { box-shadow: var(--shadow-page); }
 	.post-list__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
 	@media (max-width: 720px) { .post-list { gap: 0.5rem; } }

@@ -38,6 +38,7 @@ pub struct PostSummary {
     pub title: String,
     pub slug: String,
     pub thumbnail_url: Option<String>,
+    pub tags: Vec<String>,
     pub published_at: DateTime<Utc>,
 }
 
@@ -49,6 +50,7 @@ pub struct DraftPostSummary {
     pub title: String,
     pub slug: String,
     pub thumbnail_url: Option<String>,
+    pub tags: Vec<String>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -97,11 +99,13 @@ mod tests {
             title: "Hello".to_string(),
             slug: "hello".to_string(),
             thumbnail_url: Some("https://example.test/image.png".to_string()),
+            tags: vec!["rust".to_string()],
             published_at: Utc::now(),
         };
 
         let json = serde_json::to_value(post).unwrap();
         assert_eq!(json["thumbnailUrl"], "https://example.test/image.png");
+        assert_eq!(json["tags"], serde_json::json!(["rust"]));
         assert!(json.get("thumbnail_url").is_none());
     }
 
@@ -112,12 +116,14 @@ mod tests {
             title: "Draft".to_string(),
             slug: "draft".to_string(),
             thumbnail_url: None,
+            tags: vec!["astro".to_string()],
             updated_at: Utc::now(),
         };
 
         let json = serde_json::to_value(post).unwrap();
         assert!(json.get("updatedAt").is_some());
         assert!(json.get("updated_at").is_none());
+        assert_eq!(json["tags"], serde_json::json!(["astro"]));
     }
 
     #[test]

@@ -1,0 +1,22 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import PageLayout from '../components/PageLayout.astro';
+import { getPageAuth } from '../lib/page-auth.ts';
+import { renderMarkdown } from '../lib/markdown.ts';
+import meMarkdown from '../content/me.md?raw';
+
+const { isLoggedIn } = await getPageAuth(Astro.request, Astro.cookies);
+const content = await renderMarkdown(meMarkdown);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title="me" />
+	</head>
+	<body>
+		<PageLayout isLoggedIn={isLoggedIn} title="about me" titleClass="title-wave">
+			<div class="markdown-content" set:html={content} />
+		</PageLayout>
+	</body>
+</html>

@@ -66,7 +66,7 @@ async fn list_posts(
     let (size, offset) = query.pagination()?;
     let posts = sqlx::query_as::<_, PostSummary>(
         r#"
-        select id, title, slug, thumbnail_url, published_at
+        select id, title, slug, thumbnail_url, tags, published_at
         from posts
         where status = 'published' and published_at <= now() and deleted_at is null
         order by published_at desc
@@ -90,7 +90,7 @@ async fn list_drafts(
 
     let posts = sqlx::query_as::<_, DraftPostSummary>(
         r#"
-        select id, title, slug, thumbnail_url, updated_at
+        select id, title, slug, thumbnail_url, tags, updated_at
         from posts
         where status = 'draft' and author_id = $1 and deleted_at is null
         order by updated_at desc
