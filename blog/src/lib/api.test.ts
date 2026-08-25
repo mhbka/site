@@ -117,6 +117,19 @@ test('sends requested pagination values when listing posts', async () => {
 	assert.equal(mock.calls[0][0], 'https://api.example.test/posts?page=3&size=20');
 });
 
+test('lists tags and filters posts by a tag', async () => {
+	const tagsMock = createFetch(Response.json([{ tag: 'rust', count: 3 }]));
+	const tagsApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: tagsMock.fetch });
+
+	assert.deepEqual(await tagsApi.listTags(), [{ tag: 'rust', count: 3 }]);
+	assert.equal(tagsMock.calls[0][0], 'https://api.example.test/tags');
+
+	const postsMock = createFetch(Response.json([]));
+	const postsApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: postsMock.fetch });
+	await postsApi.listPosts(1, 20, 'rust');
+	assert.equal(postsMock.calls[0][0], 'https://api.example.test/posts?page=1&size=20&tag=rust');
+});
+
 test('gets the current author drafts with their access token', async () => {
 	const mock = createFetch(Response.json([]));
 	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });

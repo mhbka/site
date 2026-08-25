@@ -11,13 +11,13 @@ I'm a big fan of [Rust](https://rust-lang.org/), tolerant of most strictly typed
 I know my fair share of backend/frontend/etc, but am slowly learning about graphics. 
 I'm also interested in working on something lower-level in the future (in Rust).
 
-I like drifting and touge driving, and spend a lot of time on my sim in public servers on [Assetto Corsa](https://assettocorsa.gg/).
+I like drifting and touge driving, and spend a lot of time on the sim in public servers on [Assetto Corsa](https://assettocorsa.gg/).
 
 I play [osu!](https://osu.ppy.sh/) and used to be a pretty OK [beatmapper](https://osu.ppy.sh/wiki/en/Beatmapping). However, I'm no longer involved in the community and only play offline these days.
 That said, I've accumulated some (outwardly strange) thoughts and ideas around beatmapping, and plan to write a few posts on them,
 if for nothing else just to document.
 
-![alyce](public/images/alyce.png)
+![alyce](/images/alyce.png)
 
 I also know a bit of Japanese and am slowly working on it.  
 

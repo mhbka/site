@@ -1,4 +1,5 @@
 pub mod comments;
 pub mod error;
 pub mod posts;
+pub mod tags;
 pub mod users;

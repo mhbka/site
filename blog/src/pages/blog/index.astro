@@ -4,20 +4,30 @@ import PageLayout from '../../components/PageLayout.astro';
 import FetchError from '../../components/FetchError.astro';
 import Pagination from '../../components/Pagination.astro';
 import PostList from '../../components/PostList.astro';
+import TagFilter from '../../components/TagFilter.astro';
 import Link from '../../components/ui/Link.astro';
 import { blogApi } from '../../lib/api.ts';
 import { fetchResult } from '../../lib/fetch-result.ts';
 import { getPageAuth } from '../../lib/page-auth.ts';
 import { parsePage } from '../../lib/pagination.ts';
+import { normalizeTag } from '../../lib/tags.ts';
 
 const pageSize = 20;
 const page = parsePage(Astro.url.searchParams.get('page'));
-const result = await fetchResult(
-	() => blogApi.listPosts(page, pageSize + 1),
+const selectedTag = normalizeTag(Astro.url.searchParams.get('tag') ?? '') || undefined;
+const [result, tagsResult] = await Promise.all([
+	fetchResult(
+	() => blogApi.listPosts(page, pageSize + 1, selectedTag),
 	'We could not load the blog posts. Please try again shortly.',
-);
+),
+	fetchResult(
+	() => blogApi.listTags(),
+	'We could not load the blog tags. Please try again shortly.',
+),
+]);
 const posts = result.data?.slice(0, pageSize) ?? [];
 const hasNext = (result.data?.length ?? 0) > pageSize;
+const tags = tagsResult.data ?? [];
 
 const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });
 ---
@@ -38,8 +48,11 @@ const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies,
 			{result.error ? (
 				<FetchError message={result.error} />
 			) : (
-				<PostList posts={posts} variant="published" isAuthor={isAuthor} />
-				<Pagination page={page} hasNext={hasNext} />
+				<>
+					<TagFilter tags={tags} selectedTag={selectedTag} />
+					<PostList posts={posts} variant="published" isAuthor={isAuthor} pageSize={pageSize} />
+				<Pagination page={page} hasNext={hasNext} tag={selectedTag} />
+				</>
 			)}
 		</PageLayout>
 	</body>

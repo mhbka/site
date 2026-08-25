@@ -27,7 +27,8 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	<div class="post-properties">
 		<div class="tag-input" data-tag-input>
 			<ul class="tag-list" data-tag-list aria-label="Post tags"></ul>
-			<Input id="post-tags" name="tags" placeholder="Tags" autocomplete="off" aria-label="Post tags" />
+			<Input id="post-tags" name="tags" placeholder="Tags" autocomplete="off" aria-label="Post tags" list="post-tag-suggestions" />
+			<datalist id="post-tag-suggestions"></datalist>
 		</div>
 		<details class="post-settings">
 			<summary>Post settings</summary>
@@ -68,6 +69,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	const slug = document.querySelector<HTMLInputElement>('#post-slug');
 	const tagsInput = document.querySelector<HTMLInputElement>('#post-tags');
 	const tagList = document.querySelector<HTMLUListElement>('[data-tag-list]');
+	const tagSuggestions = document.querySelector<HTMLDataListElement>('#post-tag-suggestions');
 	const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
 	const status = document.querySelector<HTMLElement>('[data-editor-status]');
 	const uploadUrl = import.meta.env.PUBLIC_IMAGE_UPLOAD_URL;
@@ -120,6 +122,17 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	}
 
 	renderTags();
+
+	void blogApi.listTags().then((availableTags) => {
+		tagSuggestions?.replaceChildren(...availableTags.map(({ tag, count }) => {
+			const option = document.createElement('option');
+			option.value = tag;
+			option.label = `${count} published post${count === 1 ? '' : 's'}`;
+			return option;
+		}));
+	}).catch(() => {
+		// Tag suggestions are optional; authors can always add a new tag.
+	});
 
 	tagsInput.addEventListener('input', () => {
 		tagsInput.value = normalizeTag(tagsInput.value);

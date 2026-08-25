@@ -39,6 +39,7 @@ const MAX_PAGE_SIZE: u32 = 100;
 struct ListPostsQuery {
     page: Option<u32>,
     size: Option<u32>,
+    tag: Option<String>,
 }
 
 impl ListPostsQuery {
@@ -56,6 +57,10 @@ impl ListPostsQuery {
         let offset = u64::from(page - 1) * u64::from(size);
         Ok((i64::from(size), offset as i64))
     }
+
+    fn tag(&self) -> Option<String> {
+        self.tag.as_ref().map(|tag| normalize_tag(tag)).filter(|tag| !tag.is_empty())
+    }
 }
 
 async fn list_posts(
@@ -63,16 +68,19 @@ async fn list_posts(
     OptionalAuthUser(_user): OptionalAuthUser,
     Query(query): Query<ListPostsQuery>,
 ) -> RouteResult<Json<Vec<PostSummary>>> {
+    let tag = query.tag();
     let (size, offset) = query.pagination()?;
     let posts = sqlx::query_as::<_, PostSummary>(
         r#"
         select id, title, slug, thumbnail_url, tags, published_at
         from posts
         where status = 'published' and published_at <= now() and deleted_at is null
+          and ($1::text is null or tags @> array[$1::text])
         order by published_at desc
-        limit $1 offset $2
+        limit $2 offset $3
         "#,
     )
+    .bind(tag)
     .bind(size)
     .bind(offset)
     .fetch_all(&app_state.pool)
@@ -112,7 +120,8 @@ mod tests {
         assert_eq!(
             ListPostsQuery {
                 page: None,
-                size: None
+                size: None,
+                tag: None,
             }
             .pagination()
             .unwrap(),
@@ -125,7 +134,8 @@ mod tests {
         assert_eq!(
             ListPostsQuery {
                 page: Some(3),
-                size: Some(20)
+                size: Some(20),
+                tag: None,
             }
             .pagination()
             .unwrap(),
@@ -136,14 +146,16 @@ mod tests {
     #[test]
     fn rejects_invalid_pagination_values() {
         assert!(ListPostsQuery {
-            page: Some(0),
-            size: Some(20)
+                page: Some(0),
+                size: Some(20),
+                tag: None,
         }
         .pagination()
         .is_err());
         assert!(ListPostsQuery {
-            page: Some(1),
-            size: Some(101)
+                page: Some(1),
+                size: Some(101),
+                tag: None,
         }
         .pagination()
         .is_err());
@@ -159,6 +171,14 @@ mod tests {
                 " ".to_string(),
             ]),
             vec!["astro", "javascript"],
+        );
+    }
+
+    #[test]
+    fn normalizes_the_tag_filter() {
+        assert_eq!(
+            ListPostsQuery { page: None, size: None, tag: Some("Java Script".to_string()) }.tag(),
+            Some("javascript".to_string())
         );
     }
 
@@ -317,13 +337,17 @@ fn normalize_tags(tags: Vec<String>) -> Vec<String> {
     let mut normalized = Vec::new();
 
     for tag in tags {
-        let tag = tag.to_lowercase().split_whitespace().collect::<String>();
+        let tag = normalize_tag(&tag);
         if !tag.is_empty() && !normalized.contains(&tag) {
             normalized.push(tag);
         }
     }
 
     normalized
+}
+
+fn normalize_tag(tag: &str) -> String {
+    tag.to_lowercase().split_whitespace().collect()
 }
 
 /// POST /id/:id/publish — publishes immediately.

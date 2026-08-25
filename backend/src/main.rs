@@ -24,6 +24,7 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .nest("/posts", routes::posts::router())
+        .nest("/tags", routes::tags::router())
         .nest("/users", routes::users::router())
         .nest("/comments", routes::comments::router())
         .with_state(app_state)

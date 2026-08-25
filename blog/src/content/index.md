@@ -3,4 +3,4 @@ Currently, this website only hosts my personal blog.
 
 Thanks for visiting!
 
-![zako](/public/images/zako.gif)
+![zako](/images/zako.gif)

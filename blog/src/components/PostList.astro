@@ -9,12 +9,19 @@ interface Props {
 	posts: Array<PostSummary | DraftPostSummary>;
 	variant: 'published' | 'drafts';
 	isAuthor?: boolean;
+	pageSize?: number;
 }
 
-const { posts, variant, isAuthor = false } = Astro.props;
+const { posts, variant, isAuthor = false, pageSize = 20 } = Astro.props;
 ---
 
-<ul class="post-list" id={variant === 'drafts' ? 'draft-list' : undefined}>
+<ul
+	class="post-list"
+	id={variant === 'drafts' ? 'draft-list' : 'published-list'}
+	data-page-size={variant === 'published' ? pageSize + 1 : undefined}
+	data-is-author={variant === 'published' && isAuthor ? 'true' : undefined}
+	aria-live={variant === 'published' ? 'polite' : undefined}
+>
 	{posts.map((post) => (
 		<li data-draft-id={variant === 'drafts' ? post.id : undefined}>
 			<Link class="post-card" href={variant === 'drafts' ? `/posts/edit/${post.id}/` : `/blog/${post.slug}/`}>
@@ -39,16 +46,127 @@ const { posts, variant, isAuthor = false } = Astro.props;
 	))}
 </ul>
 
+{variant === 'published' && (
+	<script>
+		import { blogApi } from '../lib/api.ts';
+		import { createSupabaseBrowserClient } from '../lib/auth/supabase.ts';
+		import type { PostSummary } from '../lib/models/posts.ts';
+
+		const list = document.querySelector<HTMLUListElement>('#published-list');
+		const pageSize = Number(list?.dataset.pageSize ?? '21');
+		const isAuthor = list?.dataset.isAuthor === 'true';
+
+		function formatDate(value: string) {
+			return new Date(value).toLocaleDateString('en-us', {
+				year: 'numeric',
+				month: 'short',
+				day: 'numeric',
+			});
+		}
+
+		async function moveToDraft(postId: string, button: HTMLButtonElement) {
+			button.disabled = true;
+			try {
+				const { data: { session } } = await createSupabaseBrowserClient().auth.getSession();
+				if (!session) throw new Error('Your session has expired. Please sign in again.');
+				await blogApi.movePostToDraft(postId, session.access_token);
+				window.location.assign(`/posts/edit/${encodeURIComponent(postId)}/`);
+			} catch (error) {
+				window.alert(error instanceof Error ? error.message : 'Unable to move this post to drafts.');
+				button.disabled = false;
+			}
+		}
+
+		function renderPost(post: PostSummary) {
+			const item = document.createElement('li');
+			const link = document.createElement('a');
+			link.className = 'ui-link post-card';
+			link.href = `/blog/${encodeURIComponent(post.slug)}/`;
+
+			if (post.thumbnailUrl) {
+				const image = document.createElement('img');
+				image.width = 720;
+				image.height = 360;
+				image.src = post.thumbnailUrl;
+				image.alt = '';
+				link.append(image);
+			}
+
+			const title = document.createElement('h4');
+			title.className = 'post-card__title';
+			title.textContent = post.title;
+			link.append(title);
+
+			const date = document.createElement('p');
+			date.className = 'post-card__date';
+			date.textContent = formatDate(post.publishedAt);
+			link.append(date);
+
+			if (post.tags.length) {
+				const tags = document.createElement('p');
+				tags.className = 'post-card__tags';
+				tags.textContent = post.tags.map((tag) => `#${tag}`).join(' ');
+				link.append(tags);
+			}
+
+			item.append(link);
+			if (isAuthor) {
+				const actions = document.createElement('div');
+				actions.className = 'post-list__actions';
+				const button = document.createElement('button');
+				button.className = 'ui-button';
+				button.type = 'button';
+				button.textContent = 'Move to draft';
+				button.addEventListener('click', () => void moveToDraft(post.id, button));
+				actions.append(button);
+				item.append(actions);
+			}
+
+			return item;
+		}
+
+		function renderPagination(tag: string | undefined, hasNext: boolean) {
+			const pagination = document.querySelector<HTMLElement>('.pagination');
+			if (!pagination) return;
+
+			pagination.hidden = !hasNext;
+			if (!hasNext) return;
+			const link = document.createElement('a');
+			link.className = 'ui-link ui-button';
+			const query = new URLSearchParams({ page: '2' });
+			if (tag) query.set('tag', tag);
+			link.href = `/blog/?${query}`;
+			link.textContent = 'older posts';
+			pagination.replaceChildren(link);
+		}
+
+		document.addEventListener('posts:filter', async (event) => {
+			if (!list) return;
+			const tag = (event as CustomEvent<string | undefined>).detail;
+			list.setAttribute('aria-busy', 'true');
+			try {
+				const posts = await blogApi.listPosts(1, pageSize, tag);
+				list.replaceChildren(...posts.slice(0, pageSize - 1).map(renderPost));
+				renderPagination(tag, posts.length === pageSize);
+			} catch {
+				window.alert('Unable to filter posts. Please try again shortly.');
+			} finally {
+				list.removeAttribute('aria-busy');
+			}
+		});
+	</script>
+)}
+
 <style>
-	.post-list { display: grid; gap: 2rem; margin: 0; padding: 0; list-style: none; }
-	.post-list > li { width: 100%; text-align: left; }
-	.post-card { display: block; text-decoration: none; }
-	.post-card img { display: block; width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); transition: box-shadow 0.2s ease; }
-	.post-card__title { margin: 0; color: var(--color-heading); line-height: 1; transition: color 0.2s ease; }
-	.post-card__date { margin: 0.5rem 0; color: var(--color-muted); transition: color 0.2s ease; }
-	.post-card__tags { margin: -0.25rem 0 0; color: var(--color-muted); transition: color 0.2s ease; }
-	.post-card:hover .post-card__title, .post-card:hover .post-card__date, .post-card:hover .post-card__tags { color: var(--color-accent); }
-	.post-card:hover img { box-shadow: var(--shadow-page); }
-	.post-list__actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
-	@media (max-width: 720px) { .post-list { gap: 0.5rem; } }
+	:global(.post-list) { display: grid; gap: 2rem; margin: 0; padding: 0; list-style: none; }
+	:global(.post-list > li) { width: 100%; text-align: left; }
+	:global(.post-card) { display: block; text-decoration: none; }
+	:global(.post-card img) { display: block; width: 100%; margin-bottom: 0.5rem; border-radius: var(--radius-panel); transition: box-shadow 0.2s ease; }
+	:global(.post-card__title) { margin: 0; color: var(--color-heading); line-height: 1; transition: color 0.2s ease; }
+	:global(.post-card__date) { margin: 0.5rem 0; color: var(--color-muted); transition: color 0.2s ease; }
+	:global(.post-card__tags) { margin: -0.25rem 0 0; color: var(--color-muted); transition: color 0.2s ease; }
+	:global(.post-card:hover .post-card__title), :global(.post-card:hover .post-card__date), :global(.post-card:hover .post-card__tags) { color: var(--color-accent); }
+	:global(.post-card:hover img) { box-shadow: var(--shadow-page); }
+	:global(.post-list__actions) { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; }
+	@media (max-width: 720px) { :global(.post-list) { gap: 0.5rem; } }
 </style>

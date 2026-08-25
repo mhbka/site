@@ -4,10 +4,16 @@ import Link from './ui/Link.astro';
 interface Props {
 	page: number;
 	hasNext: boolean;
+	tag?: string;
 }
 
-const { page, hasNext } = Astro.props;
-const pageUrl = (value: number) => value === 1 ? '/blog/' : `/blog/?page=${value}`;
+const { page, hasNext, tag } = Astro.props;
+const pageUrl = (value: number) => {
+	const query = new URLSearchParams();
+	if (value > 1) query.set('page', String(value));
+	if (tag) query.set('tag', tag);
+	return query.size ? `/blog/?${query}` : '/blog/';
+};
 ---
 
 {(page > 1 || hasNext) && (
