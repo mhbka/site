@@ -45,7 +45,7 @@ async fn create_upload(
     }
     let urls = app_state
         .s3
-        .generate_presigned_image_upload_url(&request.post_id.to_string(), &request.content_type)
+        .generate_presigned_blogpost_media_upload_url(&request.post_id.to_string(), &request.content_type)
         .await
         .map_err(|err| RouteError::S3(err.to_string()))?;
     Ok(Json(urls))

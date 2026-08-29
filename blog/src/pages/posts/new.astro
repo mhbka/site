@@ -1,7 +1,7 @@
 ---
 import BaseHead from '../../components/BaseHead.astro';
 import PageLayout from '../../components/PageLayout.astro';
-import PostEditor from '../../components/PostEditor.astro';
+import PostEditor from '../../components/editor/PostEditor.astro';
 import { getPageAuth } from '../../lib/page-auth.ts';
 
 const { isLoggedIn, isAuthor } = await getPageAuth(Astro.request, Astro.cookies, { includeAuthor: true });

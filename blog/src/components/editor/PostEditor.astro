@@ -1,10 +1,8 @@
 ---
-import type { Post } from '../lib/models/posts.ts';
-import Button from './ui/Button.astro';
-import FormattedDate from './FormattedDate.astro';
-import Input from './ui/Input.astro';
-
-interface Props {
+import type { Post } from '../../lib/models/posts.ts';
+import Button from '../ui/Button.astro';
+import FormattedDate from '../FormattedDate.astro';
+import Input from '../ui/Input.astro';interface Props {
 	post?: Post;
 }
 
@@ -52,14 +50,19 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	import { Editor, defaultValueCtx, rootCtx } from '@milkdown/kit/core';
 	import { commonmark } from '@milkdown/kit/preset/commonmark';
 	import { gfm } from '@milkdown/kit/preset/gfm';
-	import { upload, uploadConfig } from '@milkdown/kit/plugin/upload';
-	import { Decoration } from '@milkdown/kit/prose/view';
+	import { block } from '@milkdown/kit/plugin/block';
+	import { clipboard } from '@milkdown/kit/plugin/clipboard';
+	import { history as historyPlugin } from '@milkdown/kit/plugin/history';
+	import { indent } from '@milkdown/kit/plugin/indent';
+	import { upload } from '@milkdown/kit/plugin/upload';
 	import { getMarkdown } from '@milkdown/kit/utils';
 	import { nord } from '@milkdown/theme-nord';
-	import { createSupabaseBrowserClient } from '../lib/auth/supabase';
-	import { blogApi } from '../lib/api';
-	import { uploadImage } from '../lib/image-upload';
-	import { addTag, normalizeTag } from '../lib/tags';
+	import { createSupabaseBrowserClient } from '../../lib/auth/supabase';
+	import { blogApi } from '../../lib/api';
+	import { uploadImage } from '../../lib/image-upload';
+	import { addTag, normalizeTag } from '../../lib/tags';
+	import { imageSelectionPlugin } from './plugins/image-selection';
+	import { imageUploadPlugin } from './plugins/image-upload';
 
 	const form = document.querySelector<HTMLFormElement>('[data-post-editor]');
 	const root = document.querySelector<HTMLElement>('#post-content');
@@ -107,7 +110,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 			removeButton.className = 'ui-button tag';
 			removeButton.setAttribute('aria-label', `Remove ${tag} tag`);
 			removeButton.dataset.tag = tag;
-			removeButton.textContent = `${tag} ×`;
+			removeButton.textContent = `${tag} Ã—`;
 			item.append(removeButton);
 			return item;
 		}));
@@ -160,45 +163,33 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	});
 
 	const supabaseClient = createSupabaseBrowserClient();
+
+	async function uploadImageFile(file: File): Promise<string> {
+		if (!file.type.startsWith('image/')) throw new Error('Only image files can be uploaded.');
+		if (!postId) throw new Error('Save this draft before uploading images.');
+
+		const { data: { session } } = await supabaseClient.auth.getSession();
+		if (!session) throw new Error('Please log in before uploading an image.');
+		return uploadImage(file, mediaApiUrl, postId, session.access_token);
+	}
+
 	const editor = await Editor.make()
 		.config((ctx) => {
 			nord(ctx);
 			ctx.set(rootCtx, root);
 			ctx.set(defaultValueCtx, root.dataset.initialContent ?? '');
-			ctx.set(uploadConfig.key, {
-				enableHtmlFileUploader: false,
-				uploadWidgetFactory: (position, spec) => {
-					const indicator = document.createElement('span');
-					indicator.className = 'image-uploading';
-					indicator.textContent = 'Uploading image…';
-					return Decoration.widget(position, indicator, spec);
-				},
-				uploader: async (files, schema) => {
-					const image = schema.nodes.image;
-					if (!image) throw new Error('The editor image extension is unavailable.');
-					if (!postId) throw new Error('Save this draft before uploading images.');
-					const uploadPostId = postId;
-
-					const { data: { session } } = await supabaseClient.auth.getSession();
-					if (!session) throw new Error('Please log in before uploading an image.');
-					const uploadedImages = await Promise.all(
-						Array.from(files)
-							.filter((file) => file.type.startsWith('image/'))
-							.map(async (file) => image.create({
-								alt: file.name,
-								src: await uploadImage(file, mediaApiUrl, uploadPostId, session.access_token),
-							})),
-					);
-
-					if (!uploadedImages.length) throw new Error('Only image files can be uploaded.');
-					return uploadedImages;
-				},
-			});
 		})
 		.use(commonmark)
 		.use(gfm)
+		.use(historyPlugin)
+		.use(clipboard)
+		.use(indent)
+		.use(block)
 		.use(upload)
+		.use(imageUploadPlugin(uploadImageFile))
+		.use(imageSelectionPlugin)
 		.create();
+
 
 	function syncContentPlaceholder() {
 		const documentContent = editorRoot.querySelector<HTMLElement>('.ProseMirror');
@@ -310,6 +301,10 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	}
 	.editor-surface :global(.ProseMirror) {
 		outline: 0;
+	}
+	.editor-surface :global(.ProseMirror-selectednode) {
+		outline: var(--focus-ring-width) solid var(--color-accent);
+		outline-offset: 2px;
 	}
 	.post-settings {
 		color: var(--color-muted);

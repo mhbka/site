@@ -11,7 +11,7 @@
 .markdown-content :where(ul, ol), .markdown-content .milkdown-theme-nord :where(ul, ol) { padding-left: 1.5rem; }
 .markdown-content :where(li + li), .markdown-content .milkdown-theme-nord :where(li + li) { margin-top: 0.125rem; }
 .markdown-content :where(a), .markdown-content .milkdown-theme-nord :where(a) { color: var(--color-accent); }
-.markdown-content :where(img), .markdown-content .milkdown-theme-nord :where(img) { display: block; }
+.markdown-content :where(img), .markdown-content .milkdown-theme-nord :where(img) { display: block; margin-bottom: 1rem; }
 .markdown-content :where(code), .markdown-content .milkdown-theme-nord :where(code) { padding: 2px 5px; border-radius: var(--radius-code); background-color: var(--color-subtle); }
 .markdown-content :where(pre), .markdown-content .milkdown-theme-nord :where(pre) { padding: 1.5em; border-radius: var(--radius-media); overflow-x: auto; background-color: var(--color-subtle); }
 .markdown-content :where(pre code), .markdown-content .milkdown-theme-nord :where(pre code) { padding: 0; background: var(--color-transparent); }

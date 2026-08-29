@@ -32,7 +32,7 @@ impl S3 {
         }
     }
 
-    pub async fn generate_presigned_image_upload_url(
+    pub async fn generate_presigned_blogpost_media_upload_url(
         &self,
         post_id: &str,
         content_type: &str,
