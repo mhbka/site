@@ -8,17 +8,23 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::{auth::{AuthUser, OptionalAuthUser}, state::AppState};
 use crate::db;
 use crate::models::posts::*;
 use crate::routes::error::{RouteError, RouteResult};
+use crate::{
+    auth::{AuthUser, OptionalAuthUser},
+    state::AppState,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_posts).post(create_post))
         .route("/drafts", get(list_drafts))
         .route("/:slug", get(get_post_by_slug))
-        .route("/id/:id", get(get_post_by_id).put(update_post).delete(delete_post))
+        .route(
+            "/id/:id",
+            get(get_post_by_id).put(update_post).delete(delete_post),
+        )
         .route("/id/:id/publish", post(publish_post))
         .route("/id/:id/draft", post(move_post_to_draft))
 }
@@ -59,7 +65,10 @@ impl ListPostsQuery {
     }
 
     fn tag(&self) -> Option<String> {
-        self.tag.as_ref().map(|tag| normalize_tag(tag)).filter(|tag| !tag.is_empty())
+        self.tag
+            .as_ref()
+            .map(|tag| normalize_tag(tag))
+            .filter(|tag| !tag.is_empty())
     }
 }
 
@@ -146,16 +155,16 @@ mod tests {
     #[test]
     fn rejects_invalid_pagination_values() {
         assert!(ListPostsQuery {
-                page: Some(0),
-                size: Some(20),
-                tag: None,
+            page: Some(0),
+            size: Some(20),
+            tag: None,
         }
         .pagination()
         .is_err());
         assert!(ListPostsQuery {
-                page: Some(1),
-                size: Some(101),
-                tag: None,
+            page: Some(1),
+            size: Some(101),
+            tag: None,
         }
         .pagination()
         .is_err());
@@ -177,11 +186,15 @@ mod tests {
     #[test]
     fn normalizes_the_tag_filter() {
         assert_eq!(
-            ListPostsQuery { page: None, size: None, tag: Some("Java Script".to_string()) }.tag(),
+            ListPostsQuery {
+                page: None,
+                size: None,
+                tag: Some("Java Script".to_string())
+            }
+            .tag(),
             Some("javascript".to_string())
         );
     }
-
 }
 
 /// GET /:slug — public read of a single published post.
@@ -323,11 +336,9 @@ async fn update_post(
 
 fn requested_slug(slug: Option<String>, title: &str) -> Result<String, RouteError> {
     match slug {
-        Some(slug) if !slug.is_empty() && !db::is_valid_slug(&slug) => {
-            Err(RouteError::bad_request(
-                "slug may contain only letters, numbers, and hyphens",
-            ))
-        }
+        Some(slug) if !slug.is_empty() && !db::is_valid_slug(&slug) => Err(
+            RouteError::bad_request("slug may contain only letters, numbers, and hyphens"),
+        ),
         Some(slug) if !slug.is_empty() => Ok(slug),
         _ => Ok(db::slugify(title)),
     }

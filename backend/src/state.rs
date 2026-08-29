@@ -1,59 +1,42 @@
-use std::sync::Arc;
-
-use chrono::{DateTime, Duration, Utc};
-use jsonwebtoken::jwk::JwkSet;
 use sqlx::{Pool, Postgres};
+use std::sync::Arc;
 use tokio::sync::{Mutex, MutexGuard};
 
-const CACHE_VALIDITY: Duration = Duration::minutes(10);
+use crate::{auth::CachedJwkSet, s3::S3};
 
 /// State used by routes.
 #[derive(Debug, Clone)]
 pub struct AppState {
     pub pool: Pool<Postgres>,
-    jwkset: Arc<Mutex<CachedJwkSet>>
+    pub s3: S3,
+    jwkset: Arc<Mutex<CachedJwkSet>>,
 }
 
 impl AppState {
-    pub fn new(pool: Pool<Postgres>) -> Self {
+    pub async fn new(
+        pool: Pool<Postgres>,
+        s3_account_id: String,
+        s3_access_key_id: String,
+        s3_access_key_secret: String,
+        s3_blogpost_bucket_name: String,
+        s3_blogpost_bucket_url: String,
+    ) -> Self {
+        let s3 = S3::new(
+            s3_account_id,
+            s3_access_key_id,
+            s3_access_key_secret,
+            s3_blogpost_bucket_name,
+            s3_blogpost_bucket_url,
+        )
+        .await;
         Self {
             pool,
-            jwkset: Arc::new(Mutex::new(CachedJwkSet::new()))
+            s3,
+            jwkset: Arc::new(Mutex::new(CachedJwkSet::new())),
         }
     }
 
     pub async fn jwkset(&self) -> MutexGuard<'_, CachedJwkSet> {
-        self.jwkset
-            .lock()
-            .await
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct CachedJwkSet {
-    set: JwkSet,
-    last_fetched: DateTime<Utc>
-}
-
-impl CachedJwkSet {
-    pub fn new() -> Self {
-
-        Self {
-            set: JwkSet { keys: vec![] },
-            last_fetched: Utc::now() - Duration::weeks(1000) // immediately outdated, so we invalidate the default set
-        }
-    }
-
-    pub fn update(&mut self, set: JwkSet) {
-        self.set = set;
-        self.last_fetched = Utc::now();
-    }
-
-    pub fn jwks(&self) -> &JwkSet {
-        &self.set
-    }
-
-    pub fn outdated(&self) -> bool {
-        Utc::now() > self.last_fetched + CACHE_VALIDITY
+        self.jwkset.lock().await
     }
 }

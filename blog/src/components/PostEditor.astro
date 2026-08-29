@@ -72,7 +72,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	const tagSuggestions = document.querySelector<HTMLDataListElement>('#post-tag-suggestions');
 	const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
 	const status = document.querySelector<HTMLElement>('[data-editor-status]');
-	const uploadUrl = import.meta.env.PUBLIC_IMAGE_UPLOAD_URL;
+	const mediaApiUrl = `${import.meta.env.BACKEND_URL.replace(/\/$/, '')}/media/uploads`;
 	let postId = form?.dataset.postId;
 
 	if (!form || !root || !editorSurface || !contentPlaceholder || !title || !slug || !tagsInput || !tagList || !button || !status) {
@@ -174,20 +174,19 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 					return Decoration.widget(position, indicator, spec);
 				},
 				uploader: async (files, schema) => {
-					if (!uploadUrl) {
-						throw new Error('Image uploads are not configured yet. Set PUBLIC_IMAGE_UPLOAD_URL to enable them.');
-					}
-
 					const image = schema.nodes.image;
 					if (!image) throw new Error('The editor image extension is unavailable.');
+					if (!postId) throw new Error('Save this draft before uploading images.');
+					const uploadPostId = postId;
 
 					const { data: { session } } = await supabaseClient.auth.getSession();
+					if (!session) throw new Error('Please log in before uploading an image.');
 					const uploadedImages = await Promise.all(
 						Array.from(files)
 							.filter((file) => file.type.startsWith('image/'))
 							.map(async (file) => image.create({
 								alt: file.name,
-								src: await uploadImage(file, uploadUrl, session?.access_token),
+								src: await uploadImage(file, mediaApiUrl, uploadPostId, session.access_token),
 							})),
 					);
 

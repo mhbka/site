@@ -1,34 +1,51 @@
-export interface ImageUploadResponse {
-	url: string;
+export interface ImageUploadRequestResponse {
+	uploadUrl: string;
+	publicUrl: string;
 }
 
 export async function uploadImage(
 	file: File,
-	uploadUrl: string,
-	token?: string,
+	mediaApiUrl: string,
+	postId: string,
+	token: string,
 	fetcher: typeof fetch = fetch,
 ): Promise<string> {
-	const body = new FormData();
-	body.append('file', file);
-
-	const response = await fetcher(uploadUrl, {
+	const requestResponse = await fetcher(mediaApiUrl, {
 		method: 'POST',
-		body,
-		headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+		headers: {
+		Authorization: `Bearer ${token}`,
+		'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ postId, contentType: file.type }),
 	});
 
-	if (!response.ok) {
+	if (!requestResponse.ok) {
+		throw new Error('Unable to prepare image upload. Please try again.');
+	}
+
+	const upload: unknown = await requestResponse.json();
+	if (!isImageUploadRequestResponse(upload)) {
+		throw new Error('Image upload did not return upload details.');
+	}
+
+	const uploadResponse = await fetcher(upload.uploadUrl, {
+		method: 'PUT',
+		headers: { 'Content-Type': file.type },
+		body: file,
+	});
+
+	if (!uploadResponse.ok) {
 		throw new Error('Image upload failed. Please try again.');
 	}
 
-	const data: unknown = await response.json();
-	if (!isImageUploadResponse(data)) {
-		throw new Error('Image upload did not return an image URL.');
-	}
-
-	return data.url;
+	return upload.publicUrl;
 }
 
-function isImageUploadResponse(data: unknown): data is ImageUploadResponse {
-	return typeof data === 'object' && data !== null && 'url' in data && typeof data.url === 'string';
+function isImageUploadRequestResponse(data: unknown): data is ImageUploadRequestResponse {
+	return typeof data === 'object'
+		&& data !== null
+		&& 'uploadUrl' in data
+		&& typeof data.uploadUrl === 'string'
+		&& 'publicUrl' in data
+		&& typeof data.publicUrl === 'string';
 }

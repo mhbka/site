@@ -1,6 +1,6 @@
 use axum::{extract::State, routing::get, Json, Router};
 use serde::Serialize;
-use sqlx::{PgPool};
+use sqlx::PgPool;
 use uuid::Uuid;
 
 use crate::auth::AuthUser;

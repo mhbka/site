@@ -1,3 +1,4 @@
+use aws_sdk_s3::error::SdkError;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -11,6 +12,7 @@ pub enum RouteError {
     Forbidden(&'static str),
     NotFound(&'static str),
     Database(sqlx::Error),
+    S3(String),
 }
 
 impl RouteError {
@@ -24,6 +26,12 @@ impl RouteError {
 
     pub const fn forbidden(message: &'static str) -> Self {
         Self::Forbidden(message)
+    }
+}
+
+impl<E> From<SdkError<E>> for RouteError {
+    fn from(error: SdkError<E>) -> Self {
+        Self::S3(error.to_string())
     }
 }
 
@@ -41,6 +49,10 @@ impl IntoResponse for RouteError {
             Self::NotFound(message) => (StatusCode::NOT_FOUND, message).into_response(),
             Self::Database(error) => {
                 tracing::error!(%error, "database error");
+                (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+            }
+            Self::S3(error) => {
+                tracing::warn!("Error from S3: {error}");
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
             }
         }

@@ -141,7 +141,7 @@ mod tests {
             Some("https://example.test/image.png")
         );
         assert_eq!(request.slug, None);
-		assert_eq!(request.tags, Some(vec!["rust".to_string()]));
+        assert_eq!(request.tags, Some(vec!["rust".to_string()]));
     }
 
     #[test]
@@ -155,6 +155,6 @@ mod tests {
         .unwrap();
 
         assert_eq!(request.slug.as_deref(), Some("custom-draft"));
-		assert_eq!(request.tags, Some(vec!["astro".to_string()]));
+        assert_eq!(request.tags, Some(vec!["astro".to_string()]));
     }
 }
