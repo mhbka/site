@@ -21,10 +21,6 @@ I might write about beatmapping once in a while though.
 
 ![alyce](/images/alyce.png)
 
-I like to hunt for JP music on places like 
-[vgmdb](https://vgmdb.net/), [dojin-music](https://dojin-music.info/), and [khinsider](https://downloads.khinsider.com/).
-I still listen to other stuff like DnB and rap though, mostly wherever the YT Music and Soundcloud algo takes me.
-
 I know a little bit of Japanese and am slowly working on it.  
 
 ## links

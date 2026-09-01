@@ -1,0 +1,10 @@
+cloudflare_zone_id = "your-cloudflare-zone-id"
+
+vps_name       = "site"
+vps_plan_code  = "vps-le-2-2-40"
+vps_datacenter = "WAW"
+vps_os         = "Debian 12"
+vps_image_id   = "your-ovh-image-id"
+
+ssh_public_key       = "ssh-ed25519 AAAA... you@example.com"
+ssh_private_key_path = "C:/Users/you/.ssh/id_ed25519"

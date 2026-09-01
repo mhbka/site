@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build:
+      context: ./blog
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.10-alpine
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?Set SITE_DOMAIN in the deployment environment}
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN in the deployment environment}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in the deployment environment}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
