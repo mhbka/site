@@ -38,7 +38,7 @@ jobs:
       TF_VAR_vps_os: ${{ vars.OVH_VPS_OS }}
       TF_VAR_vps_image_id: ${{ vars.OVH_VPS_IMAGE_ID }}
       TF_VAR_ssh_public_key: ${{ secrets.VPS_SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key_path: ${{ runner.temp }}/ssh/id_ed25519
+      TF_VAR_ssh_private_key_path: /tmp/terraform-vps-ssh/id_ed25519
       TF_VAR_ssh_user: ${{ vars.VPS_SSH_USER }}
       TF_VAR_api_subdomain: ${{ vars.API_SUBDOMAIN }}
       TF_VAR_cloudflare_proxied: "true"
@@ -55,9 +55,9 @@ jobs:
         env:
           VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         run: |
-          install -d -m 700 "$RUNNER_TEMP/ssh"
-          printf '%s' "$VPS_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
-          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+          install -d -m 700 "$(dirname "$TF_VAR_ssh_private_key_path")"
+          printf '%s' "$VPS_SSH_PRIVATE_KEY" > "$TF_VAR_ssh_private_key_path"
+          chmod 600 "$TF_VAR_ssh_private_key_path"
 
       - name: Initialize Terraform
         working-directory: infra
