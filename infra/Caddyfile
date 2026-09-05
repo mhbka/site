@@ -1,5 +1,5 @@
 {
-	# TLS certificates are obtained automatically after DNS points at the VPS.
+	# TLS certificates are obtained automatically after DNS points at the instance.
 	email {$ACME_EMAIL}
 }
 

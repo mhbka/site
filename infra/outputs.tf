@@ -1,9 +1,9 @@
-output "vps_ipv4" {
-  description = "Public IPv4 address assigned to the VPS."
-  value       = local.vps_ipv4
+output "instance_ipv4" {
+  description = "Public IPv4 address assigned to the OCI instance."
+  value       = oci_core_instance.site.public_ip
 }
 
-output "vps_service_name" {
-  description = "OVH VPS service name."
-  value       = ovh_vps.site.name
+output "oci_instance_id" {
+  description = "OCI instance OCID."
+  value       = oci_core_instance.site.id
 }

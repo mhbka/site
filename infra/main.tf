@@ -6,100 +6,139 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "~> 5.0"
     }
-    ovh = {
-      source  = "ovh/ovh"
-      version = "~> 2.0"
+    oci = {
+      source  = "oracle/oci"
+      version = "~> 8.0"
     }
   }
 }
 
-provider "cloudflare" {
-  # Set CLOUDFLARE_API_TOKEN instead of committing a token here.
+provider "cloudflare" {}
+
+# OCI credentials are supplied by OCI_* environment variables in CI.
+provider "oci" {}
+
+data "oci_identity_availability_domains" "available" {
+  compartment_id = var.oci_tenancy_ocid
 }
 
-provider "ovh" {
-  # Set OVH_ENDPOINT, OVH_APPLICATION_KEY, OVH_APPLICATION_SECRET, and
-  # OVH_CONSUMER_KEY instead of committing credentials here.
-}
-
-data "ovh_me" "current" {}
-
-resource "ovh_vps" "site" {
-  display_name   = var.vps_name
-  image_id       = var.vps_image_id
-  ovh_subsidiary = data.ovh_me.current.ovh_subsidiary
-  public_ssh_key = var.ssh_public_key
-
-  plan = [{
-    duration     = "P1M"
-    plan_code    = var.vps_plan_code
-    pricing_mode = "default"
-    configuration = [
-      {
-        label = "vps_datacenter"
-        value = var.vps_datacenter
-      },
-      {
-        label = "vps_os"
-        value = var.vps_os
-      },
-    ]
-  }]
-}
-
-# The VPS resource does not expose its assigned IP, so read it once ordering has
-# completed. OVH returns the addresses attached to the new VPS here.
-data "ovh_vps" "site" {
-  service_name = ovh_vps.site.name
+data "oci_core_images" "ubuntu" {
+  compartment_id           = var.oci_compartment_ocid
+  operating_system         = "Canonical Ubuntu"
+  operating_system_version = "24.04"
+  shape                    = var.oci_instance_shape
+  sort_by                  = "TIMECREATED"
+  sort_order               = "DESC"
 }
 
 locals {
-  vps_ipv4 = one([
-    for ip in data.ovh_vps.site.ips : ip
-    if can(regex("^\\d{1,3}(\\.\\d{1,3}){3}$", ip))
-  ])
+  availability_domain = data.oci_identity_availability_domains.available.availability_domains[var.oci_availability_domain_index].name
+  instance_image_id   = data.oci_core_images.ubuntu.images[0].id
+}
+
+resource "oci_core_vcn" "site" {
+  compartment_id = var.oci_compartment_ocid
+  cidr_blocks    = [var.vcn_cidr]
+  display_name   = "${var.instance_name}-vcn"
+  dns_label      = "sitevcn"
+}
+
+resource "oci_core_internet_gateway" "site" {
+  compartment_id = var.oci_compartment_ocid
+  vcn_id         = oci_core_vcn.site.id
+  display_name   = "${var.instance_name}-internet-gateway"
+  enabled        = true
+}
+
+resource "oci_core_route_table" "public" {
+  compartment_id = var.oci_compartment_ocid
+  vcn_id         = oci_core_vcn.site.id
+  display_name   = "${var.instance_name}-public-routes"
+
+  route_rules {
+    destination       = "0.0.0.0/0"
+    destination_type  = "CIDR_BLOCK"
+    network_entity_id = oci_core_internet_gateway.site.id
+  }
+}
+
+resource "oci_core_security_list" "public" {
+  compartment_id = var.oci_compartment_ocid
+  vcn_id         = oci_core_vcn.site.id
+  display_name   = "${var.instance_name}-public-security-list"
+
+  dynamic "ingress_security_rules" {
+    for_each = toset([22, 80, 443])
+    content {
+      protocol = "6"
+      source   = "0.0.0.0/0"
+      tcp_options {
+        min = ingress_security_rules.value
+        max = ingress_security_rules.value
+      }
+    }
+  }
+
+  egress_security_rules {
+    protocol    = "all"
+    destination = "0.0.0.0/0"
+  }
+}
+
+resource "oci_core_subnet" "public" {
+  compartment_id             = var.oci_compartment_ocid
+  vcn_id                     = oci_core_vcn.site.id
+  cidr_block                 = var.public_subnet_cidr
+  display_name               = "${var.instance_name}-public-subnet"
+  dns_label                  = "public"
+  route_table_id             = oci_core_route_table.public.id
+  security_list_ids          = [oci_core_security_list.public.id]
+  prohibit_public_ip_on_vnic = false
+}
+
+resource "oci_core_instance" "site" {
+  availability_domain = local.availability_domain
+  compartment_id      = var.oci_compartment_ocid
+  display_name        = var.instance_name
+  shape               = var.oci_instance_shape
+
+  shape_config {
+    ocpus         = var.oci_instance_ocpus
+    memory_in_gbs = var.oci_instance_memory_gbs
+  }
+
+  create_vnic_details {
+    subnet_id        = oci_core_subnet.public.id
+    assign_public_ip = true
+  }
+
+  metadata = {
+    ssh_authorized_keys = var.ssh_public_key
+  }
+
+  source_details {
+    source_type             = "image"
+    source_id               = local.instance_image_id
+    boot_volume_size_in_gbs = var.boot_volume_size_gbs
+  }
 }
 
 resource "cloudflare_dns_record" "site" {
   zone_id = var.cloudflare_zone_id
   name    = "@"
   type    = "A"
-  content = local.vps_ipv4
+  content = oci_core_instance.site.public_ip
   proxied = var.cloudflare_proxied
   ttl     = 1
-  comment = "Managed by Terraform: ${var.vps_name}"
+  comment = "Managed by Terraform: ${var.instance_name}"
 }
 
 resource "cloudflare_dns_record" "api" {
   zone_id = var.cloudflare_zone_id
   name    = var.api_subdomain
   type    = "A"
-  content = local.vps_ipv4
+  content = oci_core_instance.site.public_ip
   proxied = var.cloudflare_proxied
   ttl     = 1
-  comment = "Managed by Terraform: ${var.vps_name}"
-}
-
-resource "terraform_data" "bootstrap" {
-  triggers_replace = [ovh_vps.site.id]
-
-  connection {
-    type        = "ssh"
-    host        = local.vps_ipv4
-    user        = var.ssh_user
-    private_key = file(var.ssh_private_key_path)
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "until sudo -n true 2>/dev/null; do sleep 2; done",
-      "sudo apt-get update",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin ufw",
-      "sudo systemctl enable --now docker",
-      "sudo ufw allow OpenSSH",
-      "sudo ufw allow 80/tcp",
-      "sudo ufw allow 443/tcp",
-      "sudo ufw --force enable",
-    ]
-  }
+  comment = "Managed by Terraform: ${var.instance_name}"
 }

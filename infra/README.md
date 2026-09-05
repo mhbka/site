@@ -1,79 +1,91 @@
 # Infrastructure
 
-This configuration orders an OVHcloud VPS, creates Cloudflare A records for the
-zone apex and `api` subdomain, and bootstraps Docker plus a minimal UFW firewall
-on the VPS. It deliberately does not contain secrets.
+This configuration creates an Oracle Cloud Infrastructure (OCI) Ubuntu 24.04
+instance, its VCN/public subnet and firewall rules, and Cloudflare A records
+for the zone apex and `api` subdomain. The GitHub Actions workflow installs
+Docker and starts the Compose application and Caddy.
 
-## Prerequisites
+## OCI access and permissions
 
-- The domain is already an active Cloudflare zone. Its nameservers must already
-  point to Cloudflare.
-- An OVH API application with the permissions needed to order and read VPSs,
-  and a default payment method in OVHcloud.
-- An OVH image ID compatible with the VPS plan. OVH requires an image ID when a
-  public SSH key is supplied during VPS creation.
-- Terraform 1.5 or newer and the matching SSH private key available locally.
+Create an OCI API signing key for a user that can manage Compute and Virtual
+Network resources in the target compartment. The workflow uses API-key
+authentication; it does not require a manually-created instance, VCN, or
+subnet. OCI documents the required tenancy OCID, user OCID, fingerprint,
+private key, and region for this authentication method.
 
-Set the provider credentials in your shell, then copy and fill the example:
+Terraform selects the first availability domain in Singapore, which corresponds
+to `AP-SINGAPORE-1-AD-1`. It selects the latest matching Canonical Ubuntu 24.04
+image for `VM.Standard.A1.Flex`.
 
-```sh
-export OVH_ENDPOINT=ovh-eu
-export OVH_APPLICATION_KEY=...
-export OVH_APPLICATION_SECRET=...
-export OVH_CONSUMER_KEY=...
-export CLOUDFLARE_API_TOKEN=...
-
-cp terraform.tfvars.example terraform.tfvars
-terraform init \
-  -backend-config="bucket=$TF_STATE_BUCKET" \
-  -backend-config="key=$TF_STATE_KEY"
-terraform plan
-terraform apply
-```
-
-The Cloudflare token needs `DNS:Read` and `DNS:Edit` for the zone.
+The public OCI security list and UFW both allow TCP 22, 80, and 443. Narrow SSH
+to a fixed source range after establishing a suitable access path.
 
 ## Remote state
 
-The state is stored in an existing S3-compatible bucket. For OVHcloud, create
-a versioned High Performance Object Storage bucket and an S3 user with access
-limited to that bucket before the first `terraform init`. In GitHub Actions,
-provide its settings through the environment:
+The state is stored in an existing S3-compatible bucket, including Cloudflare
+R2. Create the bucket before first use. Terraform must initialize its backend
+before it can create resources, so this configuration cannot create its own
+state bucket.
 
-```yaml
-env:
-  TF_STATE_BUCKET: your-terraform-state-bucket
-  TF_STATE_KEY: site/production/terraform.tfstate
-  AWS_REGION: gra
-  AWS_ENDPOINT_URL_S3: https://s3.gra.perf.cloud.ovh.net/
-  AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+```sh
+terraform init \
+  -backend-config="bucket=$TF_STATE_BUCKET" \
+  -backend-config="key=$TF_STATE_KEY"
 ```
 
-Then initialize Terraform in the workflow:
+For R2, use `auto` for `AWS_REGION` and
+`https://<ACCOUNT_ID>.r2.cloudflarestorage.com` for `AWS_ENDPOINT_URL_S3`.
 
-```yaml
-- name: Initialize Terraform
-  working-directory: infra
-  run: >-
-    terraform init -input=false
-    -backend-config="bucket=$TF_STATE_BUCKET"
-    -backend-config="key=$TF_STATE_KEY"
+## GitHub Actions configuration
+
+`.github/workflows/infra.yml` plans on pull requests and applies plus deploys
+on pushes to `main`.
+
+Create these GitHub Actions variables:
+
+```text
+OCI_REGION                         # ap-singapore-1
+OCI_TENANCY_OCID
+OCI_USER_OCID
+OCI_FINGERPRINT
+OCI_COMPARTMENT_OCID
+OCI_INSTANCE_NAME                  # e.g. site
+OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
+OCI_INSTANCE_OCPUS                 # 1 initially
+OCI_INSTANCE_MEMORY_GBS            # 6 initially
+CLOUDFLARE_ZONE_ID
+S3_REGION                          # auto for Cloudflare R2
+S3_ENDPOINT                        # R2 account endpoint
+TF_STATE_BUCKET
+TF_STATE_KEY
+OCI_SSH_USER                       # ubuntu
+API_SUBDOMAIN                      # api
+SITE_DOMAIN
+API_DOMAIN
+ACME_EMAIL
 ```
 
-`AWS_REGION` and `AWS_ENDPOINT_URL_S3` are read directly by the S3 backend;
-the bucket and state key are passed as partial backend configuration because
-Terraform has no environment variables for those two backend arguments.
+Create these GitHub Actions secrets:
 
-The state bucket cannot be created by this same configuration because Terraform
-must initialize its backend before it can create any resources. A separate
-bootstrap stack is appropriate if you want bucket creation to be automated.
+```text
+OCI_PRIVATE_KEY                    # PEM private half of the OCI API signing key
+CLOUDFLARE_API_TOKEN
+S3_ACCESS_KEY_ID
+S3_SECRET_ACCESS_KEY
+INSTANCE_SSH_PUBLIC_KEY
+INSTANCE_SSH_PRIVATE_KEY
+BLOG_ENV
+BACKEND_ENV
+```
 
-## Deploying the application
+`INSTANCE_SSH_PUBLIC_KEY` and `INSTANCE_SSH_PRIVATE_KEY` must be the matching pair used
+to access the Ubuntu instance. `BLOG_ENV` and `BACKEND_ENV` are complete `.env`
+file contents. The workflow excludes `.env` files from the repository sync,
+writes those files on the instance, then runs `docker compose up -d --build`.
 
-The GitHub Actions deployment should copy this repository's `compose.yaml` and
-`infra/Caddyfile` to the VPS, create a root `.env` with the public hostnames,
-and then run `docker compose up -d --build`:
+## Caddy and Cloudflare
+
+Set these deployment variables for Compose/Caddy, not Terraform:
 
 ```dotenv
 SITE_DOMAIN=example.com
@@ -81,63 +93,6 @@ API_DOMAIN=api.example.com
 ACME_EMAIL=ops@example.com
 ```
 
-These are Compose/Caddy deployment variables, not Terraform variables. They
-are intentionally not included in `terraform.tfvars`.
-
-Only Caddy exposes ports 80 and 443. The `frontend` and `backend` containers
-remain private on the Compose network, and Caddy routes the apex domain to
-`frontend:4321` and the API domain to `backend:8080`.
-
-Set Cloudflare SSL/TLS encryption mode to **Full (strict)** so Cloudflare also
-validates Caddy's origin certificate.
-
-## GitHub Actions
-
-`.github/workflows/infra.yml` runs `terraform plan` on every pull request. On
-every push to `main`, it applies Terraform and deploys the Compose stack to the
-VPS.
-
-Create these repository or environment variables:
-
-```text
-OVH_ENDPOINT
-S3_REGION
-S3_ENDPOINT
-TF_STATE_BUCKET
-TF_STATE_KEY
-CLOUDFLARE_ZONE_ID
-OVH_VPS_NAME
-OVH_VPS_PLAN_CODE
-OVH_VPS_DATACENTER
-OVH_VPS_OS
-OVH_VPS_IMAGE_ID
-VPS_SSH_USER
-API_SUBDOMAIN
-SITE_DOMAIN
-API_DOMAIN
-ACME_EMAIL
-```
-
-Create these secrets:
-
-```text
-OVH_APPLICATION_KEY
-OVH_APPLICATION_SECRET
-OVH_CONSUMER_KEY
-CLOUDFLARE_API_TOKEN
-S3_ACCESS_KEY_ID
-S3_SECRET_ACCESS_KEY
-VPS_SSH_PUBLIC_KEY
-VPS_SSH_PRIVATE_KEY
-BLOG_ENV
-BACKEND_ENV
-```
-
-`BLOG_ENV` and `BACKEND_ENV` are the complete contents of the respective
-`.env` files. The workflow excludes all `.env` files when syncing the
-repository, writes those secrets securely on the VPS, and then starts the
-stack. The first connection accepts the VPS SSH host key automatically; replace
-that with a pinned known-host entry once the VPS is established.
-
-Use `cloudflare_proxied = false` temporarily if you need to diagnose TLS or
-origin reachability directly. Keep it `true` for normal Cloudflare proxying.
+Caddy is the only service publishing ports 80 and 443. It proxies the apex
+domain to `frontend:4321` and the API domain to `backend:8080`. Set Cloudflare
+SSL/TLS mode to **Full (strict)**.

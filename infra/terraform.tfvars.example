@@ -1,10 +1,12 @@
-cloudflare_zone_id = "your-cloudflare-zone-id"
+cloudflare_zone_id   = "your-cloudflare-zone-id"
+oci_tenancy_ocid     = "ocid1.tenancy.oc1..example"
+oci_compartment_ocid = "ocid1.compartment.oc1..example"
+instance_name        = "site"
 
-vps_name       = "site"
-vps_plan_code  = "vps-le-2-2-40"
-vps_datacenter = "WAW"
-vps_os         = "Debian 12"
-vps_image_id   = "your-ovh-image-id"
+# AP-SINGAPORE-1-AD-1 is the first availability domain (index 0).
+oci_availability_domain_index = 0
+oci_instance_shape            = "VM.Standard.A1.Flex"
+oci_instance_ocpus            = 1
+oci_instance_memory_gbs       = 6
 
-ssh_public_key       = "ssh-ed25519 AAAA... you@example.com"
-ssh_private_key_path = "C:/Users/you/.ssh/id_ed25519"
+ssh_public_key = "ssh-ed25519 AAAA... you@example.com"

@@ -18,12 +18,13 @@ jobs:
     name: Terraform plan or apply
     runs-on: ubuntu-latest
     outputs:
-      vps_ip: ${{ steps.vps.outputs.vps_ip }}
+      instance_ip: ${{ steps.instance.outputs.instance_ip }}
     env:
-      OVH_ENDPOINT: ${{ vars.OVH_ENDPOINT }}
-      OVH_APPLICATION_KEY: ${{ secrets.OVH_APPLICATION_KEY }}
-      OVH_APPLICATION_SECRET: ${{ secrets.OVH_APPLICATION_SECRET }}
-      OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+      OCI_REGION: ${{ vars.OCI_REGION }}
+      OCI_TENANCY_OCID: ${{ vars.OCI_TENANCY_OCID }}
+      OCI_USER_OCID: ${{ vars.OCI_USER_OCID }}
+      OCI_FINGERPRINT: ${{ vars.OCI_FINGERPRINT }}
+      OCI_PRIVATE_KEY_PATH: /tmp/terraform-oci-api-key.pem
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
@@ -32,14 +33,13 @@ jobs:
       TF_STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
       TF_STATE_KEY: ${{ vars.TF_STATE_KEY }}
       TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
-      TF_VAR_vps_name: ${{ vars.OVH_VPS_NAME }}
-      TF_VAR_vps_plan_code: ${{ vars.OVH_VPS_PLAN_CODE }}
-      TF_VAR_vps_datacenter: ${{ vars.OVH_VPS_DATACENTER }}
-      TF_VAR_vps_os: ${{ vars.OVH_VPS_OS }}
-      TF_VAR_vps_image_id: ${{ vars.OVH_VPS_IMAGE_ID }}
-      TF_VAR_ssh_public_key: ${{ secrets.VPS_SSH_PUBLIC_KEY }}
-      TF_VAR_ssh_private_key_path: /tmp/terraform-vps-ssh/id_ed25519
-      TF_VAR_ssh_user: ${{ vars.VPS_SSH_USER }}
+      TF_VAR_oci_tenancy_ocid: ${{ vars.OCI_TENANCY_OCID }}
+      TF_VAR_oci_compartment_ocid: ${{ vars.OCI_COMPARTMENT_OCID }}
+      TF_VAR_instance_name: ${{ vars.OCI_INSTANCE_NAME }}
+      TF_VAR_oci_availability_domain_index: ${{ vars.OCI_AVAILABILITY_DOMAIN_INDEX }}
+      TF_VAR_oci_instance_ocpus: ${{ vars.OCI_INSTANCE_OCPUS }}
+      TF_VAR_oci_instance_memory_gbs: ${{ vars.OCI_INSTANCE_MEMORY_GBS }}
+      TF_VAR_ssh_public_key: ${{ secrets.INSTANCE_SSH_PUBLIC_KEY }}
       TF_VAR_api_subdomain: ${{ vars.API_SUBDOMAIN }}
       TF_VAR_cloudflare_proxied: "true"
 
@@ -51,13 +51,12 @@ jobs:
           terraform_version: 1.11.4
           terraform_wrapper: false
 
-      - name: Write VPS SSH key
+      - name: Write OCI API key
         env:
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         run: |
-          install -d -m 700 "$(dirname "$TF_VAR_ssh_private_key_path")"
-          printf '%s' "$VPS_SSH_PRIVATE_KEY" > "$TF_VAR_ssh_private_key_path"
-          chmod 600 "$TF_VAR_ssh_private_key_path"
+          printf '%s' "$OCI_PRIVATE_KEY" > "$OCI_PRIVATE_KEY_PATH"
+          chmod 600 "$OCI_PRIVATE_KEY_PATH"
 
       - name: Initialize Terraform
         working-directory: infra
@@ -83,11 +82,11 @@ jobs:
         working-directory: infra
         run: terraform apply -input=false -auto-approve tfplan
 
-      - name: Read VPS IP
-        id: vps
+      - name: Read OCI instance IP
+        id: instance
         if: github.event_name == 'push'
         working-directory: infra
-        run: echo "vps_ip=$(terraform output -raw vps_ipv4)" >> "$GITHUB_OUTPUT"
+        run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy application and proxy
@@ -95,8 +94,8 @@ jobs:
     needs: terraform
     runs-on: ubuntu-latest
     env:
-      VPS_IP: ${{ needs.terraform.outputs.vps_ip }}
-      VPS_SSH_USER: ${{ vars.VPS_SSH_USER }}
+      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
+      OCI_SSH_USER: ${{ vars.OCI_SSH_USER }}
       SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
       API_DOMAIN: ${{ vars.API_DOMAIN }}
       ACME_EMAIL: ${{ vars.ACME_EMAIL }}
@@ -108,17 +107,22 @@ jobs:
 
       - name: Write deployment SSH key
         env:
-          VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
         run: |
           install -d -m 700 "$RUNNER_TEMP/ssh"
-          printf '%s' "$VPS_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
+          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
           chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
 
       - name: Install Docker and prepare deployment directory
-        run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
-          "$VPS_SSH_USER@$VPS_IP"
-          'sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-plugin && sudo systemctl enable --now docker && sudo install -d -o "$USER" -g "$USER" -m 0755 /opt/site'
+        run: |
+          for attempt in {1..30}; do
+            if ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 "$OCI_SSH_USER@$INSTANCE_IP" \
+              'sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 ufw && sudo systemctl enable --now docker && sudo usermod -aG docker "$USER" && sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw --force enable && sudo install -d -o "$USER" -g "$USER" -m 0755 /opt/site'; then
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
 
       - name: Synchronize application files
         run: >-
@@ -133,19 +137,19 @@ jobs:
           --exclude='.env'
           --exclude='**/.env'
           -e "ssh -i $RUNNER_TEMP/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
-          ./ "$VPS_SSH_USER@$VPS_IP:/opt/site/"
+          ./ "$OCI_SSH_USER@$INSTANCE_IP:/opt/site/"
 
       - name: Write deployment environment files
         run: |
           printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$VPS_SSH_USER@$VPS_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$OCI_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
           printf '%s\n' "$BLOG_ENV" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$VPS_SSH_USER@$VPS_IP" 'umask 077 && tee /opt/site/blog/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$OCI_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/blog/.env > /dev/null'
           printf '%s\n' "$BACKEND_ENV" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$VPS_SSH_USER@$VPS_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$OCI_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
 
       - name: Start application and Caddy
         run: >-
           ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
-          "$VPS_SSH_USER@$VPS_IP"
+          "$OCI_SSH_USER@$INSTANCE_IP"
           'cd /opt/site && docker compose up -d --build --remove-orphans'

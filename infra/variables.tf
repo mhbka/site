@@ -3,48 +3,67 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
-variable "vps_name" {
-  description = "Display name for the OVH VPS."
+variable "oci_tenancy_ocid" {
+  description = "OCI tenancy OCID; also used to query availability domains."
+  type        = string
+}
+
+variable "oci_compartment_ocid" {
+  description = "OCI compartment OCID in which to create the network and instance."
+  type        = string
+}
+
+variable "instance_name" {
+  description = "Display name for the OCI compute instance and related networking."
   type        = string
   default     = "site"
 }
 
-variable "vps_plan_code" {
-  description = "OVH VPS product plan code, such as vps-le-2-2-40."
-  type        = string
+variable "oci_availability_domain_index" {
+  description = "Zero-based availability-domain position. Index 0 is AP-SINGAPORE-1-AD-1."
+  type        = number
+  default     = 0
 }
 
-variable "vps_datacenter" {
-  description = "OVH VPS datacenter code available for the chosen plan."
+variable "oci_instance_shape" {
+  description = "OCI compute shape."
   type        = string
+  default     = "VM.Standard.A1.Flex"
 }
 
-variable "vps_os" {
-  description = "Operating-system value accepted by the selected OVH VPS plan."
-  type        = string
-  default     = "Debian 12"
+variable "oci_instance_ocpus" {
+  description = "OCPUs assigned to the flexible compute shape."
+  type        = number
+  default     = 1
 }
 
-variable "vps_image_id" {
-  description = "OVH image ID used to install the supplied SSH public key."
+variable "oci_instance_memory_gbs" {
+  description = "Memory in GB assigned to the flexible compute shape."
+  type        = number
+  default     = 6
+}
+
+variable "boot_volume_size_gbs" {
+  description = "Boot volume size in GB."
+  type        = number
+  default     = 50
+}
+
+variable "vcn_cidr" {
+  description = "CIDR range for the VCN."
   type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "public_subnet_cidr" {
+  description = "CIDR range for the public subnet."
+  type        = string
+  default     = "10.0.0.0/24"
 }
 
 variable "ssh_public_key" {
-  description = "SSH public key to install on the VPS."
+  description = "SSH public key installed on the Ubuntu instance."
   type        = string
-}
-
-variable "ssh_private_key_path" {
-  description = "Local path to the matching private SSH key; used only for bootstrap."
-  type        = string
-  sensitive   = true
-}
-
-variable "ssh_user" {
-  description = "SSH user created by the selected image. Debian images commonly use debian."
-  type        = string
-  default     = "debian"
 }
 
 variable "api_subdomain" {
