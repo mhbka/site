@@ -28,7 +28,7 @@ variable "oci_availability_domain_index" {
 variable "oci_instance_shape" {
   description = "OCI compute shape."
   type        = string
-  default     = "VM.Standard.A1.Flex"
+  default     = "VM.Standard.E2.1.Micro"
 }
 
 variable "oci_instance_ocpus" {

@@ -50,6 +50,7 @@ OCI_USER_OCID
 OCI_COMPARTMENT_OCID                # Optional; defaults to the root tenancy compartment
 OCI_INSTANCE_NAME                  # e.g. site
 OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
+OCI_INSTANCE_SHAPE                 # VM.Standard.A1.Flex initially
 OCI_INSTANCE_OCPUS                 # 1 initially
 OCI_INSTANCE_MEMORY_GBS            # 6 initially
 CLOUDFLARE_ZONE_ID
