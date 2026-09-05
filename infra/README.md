@@ -47,7 +47,7 @@ Create these GitHub Actions variables:
 OCI_REGION                         # ap-singapore-1
 OCI_TENANCY_OCID
 OCI_USER_OCID
-OCI_COMPARTMENT_OCID
+OCI_COMPARTMENT_OCID                # Optional; defaults to the root tenancy compartment
 OCI_INSTANCE_NAME                  # e.g. site
 OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
 OCI_INSTANCE_OCPUS                 # 1 initially

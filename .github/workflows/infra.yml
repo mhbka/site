@@ -34,7 +34,7 @@ jobs:
       TF_STATE_KEY: ${{ vars.TF_STATE_KEY }}
       TF_VAR_cloudflare_zone_id: ${{ vars.CLOUDFLARE_ZONE_ID }}
       TF_VAR_oci_tenancy_ocid: ${{ vars.OCI_TENANCY_OCID }}
-      TF_VAR_oci_compartment_ocid: ${{ vars.OCI_COMPARTMENT_OCID }}
+      TF_VAR_oci_compartment_ocid: ${{ vars.OCI_COMPARTMENT_OCID || vars.OCI_TENANCY_OCID }}
       TF_VAR_instance_name: ${{ vars.OCI_INSTANCE_NAME }}
       TF_VAR_oci_availability_domain_index: ${{ vars.OCI_AVAILABILITY_DOMAIN_INDEX }}
       TF_VAR_oci_instance_ocpus: ${{ vars.OCI_INSTANCE_OCPUS }}
