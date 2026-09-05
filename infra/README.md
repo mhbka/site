@@ -14,8 +14,8 @@ subnet. OCI documents the required tenancy OCID, user OCID, fingerprint,
 private key, and region for this authentication method.
 
 Terraform selects the first availability domain in Singapore, which corresponds
-to `AP-SINGAPORE-1-AD-1`. It selects the latest matching Canonical Ubuntu 24.04
-image for `VM.Standard.A1.Flex`.
+to `AP-SINGAPORE-1-AD-1`. Supply the OCID for a compatible Ubuntu 24.04 image
+explicitly through `OCI_IMAGE_OCID`.
 
 The public OCI security list and UFW both allow TCP 22, 80, and 443. Narrow SSH
 to a fixed source range after establishing a suitable access path.
@@ -51,6 +51,7 @@ OCI_COMPARTMENT_OCID                # Optional; defaults to the root tenancy com
 OCI_INSTANCE_NAME                  # e.g. site
 OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
 OCI_INSTANCE_SHAPE                 # VM.Standard.A1.Flex initially
+OCI_IMAGE_OCID                     # Ubuntu 24.04 image OCID for the selected shape/region
 OCI_INSTANCE_OCPUS                 # 1 initially
 OCI_INSTANCE_MEMORY_GBS            # 6 initially
 CLOUDFLARE_ZONE_ID

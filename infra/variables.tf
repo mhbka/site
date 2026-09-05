@@ -31,6 +31,11 @@ variable "oci_instance_shape" {
   default     = "VM.Standard.E2.1.Micro"
 }
 
+variable "oci_image_ocid" {
+  description = "OCID of the Ubuntu image to use for the instance."
+  type        = string
+}
+
 variable "oci_instance_ocpus" {
   description = "OCPUs assigned to the flexible compute shape."
   type        = number

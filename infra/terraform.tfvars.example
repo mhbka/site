@@ -6,6 +6,7 @@ instance_name        = "site"
 # AP-SINGAPORE-1-AD-1 is the first availability domain (index 0).
 oci_availability_domain_index = 0
 oci_instance_shape            = "VM.Standard.A1.Flex"
+oci_image_ocid                = "ocid1.image.oc1.ap-singapore-1.example"
 oci_instance_ocpus            = 1
 oci_instance_memory_gbs       = 6
 
