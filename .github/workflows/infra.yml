@@ -23,7 +23,7 @@ jobs:
       OCI_REGION: ${{ vars.OCI_REGION }}
       OCI_TENANCY_OCID: ${{ vars.OCI_TENANCY_OCID }}
       OCI_USER_OCID: ${{ vars.OCI_USER_OCID }}
-      OCI_FINGERPRINT: ${{ vars.OCI_FINGERPRINT }}
+      OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
       OCI_PRIVATE_KEY_PATH: /tmp/terraform-oci-api-key.pem
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}

@@ -47,7 +47,6 @@ Create these GitHub Actions variables:
 OCI_REGION                         # ap-singapore-1
 OCI_TENANCY_OCID
 OCI_USER_OCID
-OCI_FINGERPRINT
 OCI_COMPARTMENT_OCID
 OCI_INSTANCE_NAME                  # e.g. site
 OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
@@ -69,6 +68,7 @@ Create these GitHub Actions secrets:
 
 ```text
 OCI_PRIVATE_KEY                    # PEM private half of the OCI API signing key
+OCI_FINGERPRINT                    # Fingerprint of that OCI API signing key
 CLOUDFLARE_API_TOKEN
 S3_ACCESS_KEY_ID
 S3_SECRET_ACCESS_KEY
