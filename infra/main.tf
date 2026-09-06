@@ -86,49 +86,52 @@ resource "oci_core_subnet" "public" {
   prohibit_public_ip_on_vnic = false
 }
 
-resource "oci_core_instance" "site" {
-  availability_domain = local.availability_domain
-  compartment_id      = var.oci_compartment_ocid
-  display_name        = var.instance_name
-  shape               = var.oci_instance_shape
-
-  shape_config {
-    ocpus         = var.oci_instance_ocpus
-    memory_in_gbs = var.oci_instance_memory_gbs
-  }
-
-  create_vnic_details {
-    subnet_id        = oci_core_subnet.public.id
-    assign_public_ip = true
-  }
-
-  metadata = {
-    ssh_authorized_keys = var.ssh_public_key
-  }
-
-  source_details {
-    source_type             = "image"
-    source_id               = var.oci_image_ocid
-    boot_volume_size_in_gbs = var.boot_volume_size_gbs
-  }
-}
-
-resource "cloudflare_dns_record" "site" {
-  zone_id = var.cloudflare_zone_id
-  name    = "@"
-  type    = "A"
-  content = oci_core_instance.site.public_ip
-  proxied = var.cloudflare_proxied
-  ttl     = 1
-  comment = "Managed by Terraform: ${var.instance_name}"
-}
-
-resource "cloudflare_dns_record" "api" {
-  zone_id = var.cloudflare_zone_id
-  name    = var.api_subdomain
-  type    = "A"
-  content = oci_core_instance.site.public_ip
-  proxied = var.cloudflare_proxied
-  ttl     = 1
-  comment = "Managed by Terraform: ${var.instance_name}"
-}
+# Instance and its dependent DNS records are temporarily disabled to isolate
+# network provisioning from the failed Compute launch.
+#
+# resource "oci_core_instance" "site" {
+#   availability_domain = local.availability_domain
+#   compartment_id      = var.oci_compartment_ocid
+#   display_name        = var.instance_name
+#   shape               = var.oci_instance_shape
+#
+#   shape_config {
+#     ocpus         = var.oci_instance_ocpus
+#     memory_in_gbs = var.oci_instance_memory_gbs
+#   }
+#
+#   create_vnic_details {
+#     subnet_id        = oci_core_subnet.public.id
+#     assign_public_ip = true
+#   }
+#
+#   metadata = {
+#     ssh_authorized_keys = var.ssh_public_key
+#   }
+#
+#   source_details {
+#     source_type             = "image"
+#     source_id               = var.oci_image_ocid
+#     boot_volume_size_in_gbs = var.boot_volume_size_gbs
+#   }
+# }
+#
+# resource "cloudflare_dns_record" "site" {
+#   zone_id = var.cloudflare_zone_id
+#   name    = "@"
+#   type    = "A"
+#   content = oci_core_instance.site.public_ip
+#   proxied = var.cloudflare_proxied
+#   ttl     = 1
+#   comment = "Managed by Terraform: ${var.instance_name}"
+# }
+#
+# resource "cloudflare_dns_record" "api" {
+#   zone_id = var.cloudflare_zone_id
+#   name    = var.api_subdomain
+#   type    = "A"
+#   content = oci_core_instance.site.public_ip
+#   proxied = var.cloudflare_proxied
+#   ttl     = 1
+#   comment = "Managed by Terraform: ${var.instance_name}"
+# }

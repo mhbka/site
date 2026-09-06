@@ -1,9 +1,12 @@
-output "instance_ipv4" {
-  description = "Public IPv4 address assigned to the OCI instance."
-  value       = oci_core_instance.site.public_ip
-}
-
-output "oci_instance_id" {
-  description = "OCI instance OCID."
-  value       = oci_core_instance.site.id
-}
+# Instance outputs are disabled along with the instance while isolating
+# network provisioning from the failed Compute launch.
+#
+# output "instance_ipv4" {
+#   description = "Public IPv4 address assigned to the OCI instance."
+#   value       = oci_core_instance.site.public_ip
+# }
+#
+# output "oci_instance_id" {
+#   description = "OCI instance OCID."
+#   value       = oci_core_instance.site.id
+# }
