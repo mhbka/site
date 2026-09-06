@@ -82,18 +82,17 @@ jobs:
       - name: Apply
         if: github.event_name == 'push'
         working-directory: infra
-        run: terraform apply -input=false -auto-approve tfplan
+        run: TF_LOG=DEBUG terraform apply -input=false -auto-approve tfplan
 
-      # Disabled with the instance while isolating network provisioning.
-      # - name: Read OCI instance IP
-      #   id: instance
-      #   if: github.event_name == 'push'
-      #   working-directory: infra
-      #   run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
+      - name: Read OCI instance IP
+        id: instance
+        if: github.event_name == 'push'
+        working-directory: infra
+        run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
 
   deploy:
     name: Deploy application and proxy
-    if: false # Disabled with the instance while isolating network provisioning.
+    if: github.event_name == 'push' && needs.terraform.result == 'success'
     needs: terraform
     runs-on: ubuntu-latest
     env:
