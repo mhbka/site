@@ -3,71 +3,32 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
-variable "oci_tenancy_ocid" {
-  description = "OCI tenancy OCID; also used to query availability domains."
-  type        = string
-}
-
-variable "oci_compartment_ocid" {
-  description = "OCI compartment OCID in which to create the network and instance."
-  type        = string
-}
-
 variable "instance_name" {
-  description = "Display name for the OCI compute instance and related networking."
+  description = "Name of the DigitalOcean Droplet."
   type        = string
   default     = "site"
 }
 
-variable "oci_availability_domain_index" {
-  description = "Zero-based availability-domain position. Index 0 is AP-SINGAPORE-1-AD-1."
-  type        = number
-  default     = 0
-}
-
-variable "oci_instance_shape" {
-  description = "OCI compute shape."
+variable "digitalocean_region" {
+  description = "DigitalOcean region slug for the Droplet."
   type        = string
-  default     = "VM.Standard.E2.1.Micro"
+  default     = "sgp1"
 }
 
-variable "oci_image_ocid" {
-  description = "OCID of the Ubuntu image to use for the instance."
+variable "digitalocean_droplet_size" {
+  description = "DigitalOcean Droplet size slug."
   type        = string
+  default     = "s-2vcpu-4gb"
 }
 
-variable "oci_instance_ocpus" {
-  description = "OCPUs assigned to the flexible compute shape."
-  type        = number
-  default     = 1
-}
-
-variable "oci_instance_memory_gbs" {
-  description = "Memory in GB assigned to the flexible compute shape."
-  type        = number
-  default     = 6
-}
-
-variable "boot_volume_size_gbs" {
-  description = "Boot volume size in GB."
-  type        = number
-  default     = 50
-}
-
-variable "vcn_cidr" {
-  description = "CIDR range for the VCN."
+variable "digitalocean_image" {
+  description = "DigitalOcean image slug for the Droplet."
   type        = string
-  default     = "10.0.0.0/16"
-}
-
-variable "public_subnet_cidr" {
-  description = "CIDR range for the public subnet."
-  type        = string
-  default     = "10.0.0.0/24"
+  default     = "ubuntu-24-04-x64"
 }
 
 variable "ssh_public_key" {
-  description = "SSH public key installed on the Ubuntu instance."
+  description = "SSH public key installed on the Ubuntu Droplet."
   type        = string
 }
 

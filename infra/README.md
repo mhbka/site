@@ -1,24 +1,42 @@
 # Infrastructure
 
-This configuration creates an Oracle Cloud Infrastructure (OCI) Ubuntu 24.04
-instance, its VCN/public subnet and firewall rules, and Cloudflare A records
-for the zone apex and `api` subdomain. The GitHub Actions workflow installs
+This configuration creates a DigitalOcean Ubuntu 24.04 Droplet, its firewall,
+and Cloudflare A records for the zone apex and `api` subdomain. The GitHub Actions workflow installs
 Docker and starts the Compose application and Caddy.
 
-## OCI access and permissions
+## DigitalOcean access and networking
 
-Create an OCI API signing key for a user that can manage Compute and Virtual
-Network resources in the target compartment. The workflow uses API-key
-authentication; it does not require a manually-created instance, VCN, or
-subnet. OCI documents the required tenancy OCID, user OCID, fingerprint,
-private key, and region for this authentication method.
+Create a DigitalOcean personal access token with read/write scope and store it
+as `DIGITALOCEAN_TOKEN`. Terraform creates the Droplet and its firewall; no VPC,
+subnet, or gateway resources are needed for this public deployment.
 
-Terraform selects the first availability domain in Singapore, which corresponds
-to `AP-SINGAPORE-1-AD-1`. Supply the OCID for a compatible Ubuntu 24.04 image
-explicitly through `OCI_IMAGE_OCID`.
+The default location is Singapore (`sgp1`) and the image is Ubuntu 24.04. The
+Droplet firewall and UFW both allow TCP 22, 80, and 443. Set
+`DIGITALOCEAN_SSH_USER` to `root`, which is the default user for the DigitalOcean
+Ubuntu image. Narrow SSH to a fixed source range after establishing a suitable
+access path.
 
-The public OCI security list and UFW both allow TCP 22, 80, and 443. Narrow SSH
-to a fixed source range after establishing a suitable access path.
+## Migrating the existing state
+
+This is a provider change, not an in-place instance replacement. The existing
+OCI resources in the remote Terraform state must be destroyed with the old OCI
+configuration and credentials before the first DigitalOcean workflow run; do
+not remove them from state while they still exist. Back up the state first.
+From a checkout of the prior OCI configuration, target only the OCI resources
+for destruction so the existing Cloudflare records remain in state:
+
+```sh
+terraform destroy \
+  -target=oci_core_instance.site \
+  -target=oci_core_subnet.public \
+  -target=oci_core_security_list.public \
+  -target=oci_core_route_table.public \
+  -target=oci_core_internet_gateway.site \
+  -target=oci_core_vcn.site
+```
+
+The first DigitalOcean apply creates the Droplet, updates both Cloudflare A
+records, then deploys the application.
 
 ## Remote state
 
@@ -44,22 +62,16 @@ on pushes to `main`.
 Create these GitHub Actions variables:
 
 ```text
-OCI_REGION                         # ap-singapore-1
-OCI_TENANCY_OCID
-OCI_USER_OCID
-OCI_COMPARTMENT_OCID                # Optional; defaults to the root tenancy compartment
-OCI_INSTANCE_NAME                  # e.g. site
-OCI_AVAILABILITY_DOMAIN_INDEX      # 0 for AP-SINGAPORE-1-AD-1
-OCI_INSTANCE_SHAPE                 # VM.Standard.A1.Flex initially
-OCI_IMAGE_OCID                     # Ubuntu 24.04 image OCID for the selected shape/region
-OCI_INSTANCE_OCPUS                 # 1 initially
-OCI_INSTANCE_MEMORY_GBS            # 6 initially
+DIGITALOCEAN_INSTANCE_NAME         # e.g. site
+DIGITALOCEAN_REGION                # sgp1
+DIGITALOCEAN_DROPLET_SIZE          # s-2vcpu-4gb
+DIGITALOCEAN_IMAGE                 # ubuntu-24-04-x64
 CLOUDFLARE_ZONE_ID
 S3_REGION                          # auto for Cloudflare R2
 S3_ENDPOINT                        # R2 account endpoint
 TF_STATE_BUCKET
 TF_STATE_KEY
-OCI_SSH_USER                       # ubuntu
+DIGITALOCEAN_SSH_USER              # root
 API_SUBDOMAIN                      # api
 SITE_DOMAIN
 API_DOMAIN
@@ -69,8 +81,7 @@ ACME_EMAIL
 Create these GitHub Actions secrets:
 
 ```text
-OCI_PRIVATE_KEY                    # PEM private half of the OCI API signing key
-OCI_FINGERPRINT                    # Fingerprint of that OCI API signing key
+DIGITALOCEAN_TOKEN                 # DigitalOcean personal access token with read/write scope
 CLOUDFLARE_API_TOKEN
 S3_ACCESS_KEY_ID
 S3_SECRET_ACCESS_KEY
