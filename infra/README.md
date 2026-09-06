@@ -10,6 +10,10 @@ Create a DigitalOcean personal access token with read/write scope and store it
 as `DIGITALOCEAN_TOKEN`. Terraform creates the Droplet and its firewall; no VPC,
 subnet, or gateway resources are needed for this public deployment.
 
+Terraform also registers `INSTANCE_SSH_PUBLIC_KEY` as a DigitalOcean SSH key,
+then supplies its DigitalOcean key ID to the Droplet API. Do not replace that
+secret with a fingerprint or key ID; it must remain the complete public key.
+
 The default location is Singapore (`sgp1`) and the image is Ubuntu 24.04. The
 Droplet firewall and UFW both allow TCP 22, 80, and 443. Set
 `DIGITALOCEAN_SSH_USER` to `root`, which is the default user for the DigitalOcean

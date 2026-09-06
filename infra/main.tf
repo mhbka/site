@@ -18,12 +18,17 @@ provider "cloudflare" {}
 # The DigitalOcean provider reads DIGITALOCEAN_TOKEN from the environment.
 provider "digitalocean" {}
 
+resource "digitalocean_ssh_key" "site" {
+  name       = "${var.instance_name}-deployment"
+  public_key = var.ssh_public_key
+}
+
 resource "digitalocean_droplet" "site" {
   name     = var.instance_name
   region   = var.digitalocean_region
   size     = var.digitalocean_droplet_size
   image    = var.digitalocean_image
-  ssh_keys = [var.ssh_public_key]
+  ssh_keys = [digitalocean_ssh_key.site.id]
 
   tags = ["site"]
 }
