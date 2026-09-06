@@ -135,8 +135,20 @@ jobs:
           printf '%s\n' "$BACKEND_ENV" \
             | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
 
+      - name: Build backend image
+        run: >-
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
+          "$DROPLET_SSH_USER@$INSTANCE_IP"
+          'cd /opt/site && docker compose build backend'
+
+      - name: Build frontend image
+        run: >-
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
+          "$DROPLET_SSH_USER@$INSTANCE_IP"
+          'cd /opt/site && docker compose build frontend'
+
       - name: Start application and Caddy
         run: >-
           ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
           "$DROPLET_SSH_USER@$INSTANCE_IP"
-          'cd /opt/site && docker compose up -d --build --remove-orphans'
+          'cd /opt/site && docker compose up -d --remove-orphans'
