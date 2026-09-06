@@ -75,8 +75,8 @@ jobs:
         working-directory: infra
         run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
 
-  deploy:
-    name: Build and deploy application + proxy
+  prepare-deployment:
+    name: Prepare application deployment
     if: github.event_name == 'push' && needs.terraform.result == 'success'
     needs: terraform
     runs-on: ubuntu-latest
@@ -103,7 +103,7 @@ jobs:
       - name: Install Docker and prepare deployment directory
         run: |
           for attempt in {1..30}; do
-            if ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 "$DROPLET_SSH_USER@$INSTANCE_IP" \
+            if ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" \
               'sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io docker-compose-v2 ufw && sudo systemctl enable --now docker && sudo usermod -aG docker "$USER" && sudo ufw allow OpenSSH && sudo ufw allow 80/tcp && sudo ufw allow 443/tcp && sudo ufw --force enable && sudo install -d -o "$USER" -g "$USER" -m 0755 /opt/site'; then
               exit 0
             fi
@@ -123,32 +123,92 @@ jobs:
           --exclude='.terraform'
           --exclude='.env'
           --exclude='**/.env'
-          -e "ssh -i $RUNNER_TEMP/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
+          -e "ssh -i $RUNNER_TEMP/ssh/id_ed25519 -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10"
           ./ "$DROPLET_SSH_USER@$INSTANCE_IP:/opt/site/"
 
       - name: Write deployment environment files
         run: |
           printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
           printf '%s\n' "$BLOG_ENV" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/blog/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/blog/.env > /dev/null'
           printf '%s\n' "$BACKEND_ENV" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
+
+  build-backend:
+    name: Build backend image
+    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.prepare-deployment.result == 'success'
+    needs:
+      - terraform
+      - prepare-deployment
+    runs-on: ubuntu-latest
+    env:
+      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
+      DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+
+    steps:
+      - name: Write deployment SSH key
+        env:
+          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
+        run: |
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
 
       - name: Build backend image
         run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
           "$DROPLET_SSH_USER@$INSTANCE_IP"
           'cd /opt/site && docker compose build backend'
 
+  build-frontend:
+    name: Build frontend image
+    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-backend.result == 'success'
+    needs:
+      - terraform
+      - build-backend
+    runs-on: ubuntu-latest
+    env:
+      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
+      DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+
+    steps:
+      - name: Write deployment SSH key
+        env:
+          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
+        run: |
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+
       - name: Build frontend image
         run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
           "$DROPLET_SSH_USER@$INSTANCE_IP"
           'cd /opt/site && docker compose build frontend'
 
+  start-compose:
+    name: Start application and Caddy
+    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-frontend.result == 'success'
+    needs:
+      - terraform
+      - build-frontend
+    runs-on: ubuntu-latest
+    env:
+      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
+      DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+
+    steps:
+      - name: Write deployment SSH key
+        env:
+          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
+        run: |
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
+          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+
       - name: Start application and Caddy
         run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
           "$DROPLET_SSH_USER@$INSTANCE_IP"
           'cd /opt/site && docker compose up -d --remove-orphans'
