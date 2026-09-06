@@ -76,7 +76,7 @@ jobs:
         run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
 
   deploy:
-    name: Deploy application and proxy
+    name: Build and deploy application + proxy
     if: github.event_name == 'push' && needs.terraform.result == 'success'
     needs: terraform
     runs-on: ubuntu-latest

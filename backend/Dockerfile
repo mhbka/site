@@ -1,10 +1,24 @@
-FROM rust:1.96-bookworm AS builder
+FROM rust:1.96-bookworm AS chef
+
+RUN cargo install --locked --version 0.1.78 cargo-chef
 
 WORKDIR /app
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
-COPY migrations ./migrations
+FROM chef AS planner
+
+COPY . .
+
+RUN cargo chef prepare --recipe-path recipe.json
+
+FROM chef AS builder
+
+WORKDIR /app
+
+COPY --from=planner /app/recipe.json recipe.json
+
+RUN cargo chef cook --release --recipe-path recipe.json
+
+COPY . .
 
 RUN cargo build --release --locked
 
