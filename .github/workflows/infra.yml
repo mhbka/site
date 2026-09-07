@@ -5,6 +5,18 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      rebuild_backend:
+        description: Rebuild and deploy the backend image
+        required: false
+        default: false
+        type: boolean
+      rebuild_frontend:
+        description: Rebuild and deploy the frontend image
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -16,6 +28,7 @@ concurrency:
 jobs:
   changes:
     name: Detect changed components
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
@@ -90,13 +103,16 @@ jobs:
 
       - name: Read Droplet IP
         id: instance
-        if: github.event_name == 'push'
+        if: github.event_name != 'pull_request'
         working-directory: infra
         run: echo "instance_ip=$(terraform output -raw instance_ipv4)" >> "$GITHUB_OUTPUT"
 
   prepare-deployment:
     name: Prepare application deployment
-    if: github.event_name == 'push' && needs.terraform.result == 'success'
+    if: >-
+      github.event_name != 'pull_request' &&
+      needs.terraform.result == 'success' &&
+      (github.event_name == 'push' || inputs.rebuild_backend == true || inputs.rebuild_frontend == true)
     needs: terraform
     runs-on: ubuntu-latest
     env:
@@ -152,7 +168,14 @@ jobs:
   build-backend:
     name: Build backend image
     needs: changes
-    if: github.event_name == 'push' && needs.changes.outputs.backend == 'true'
+    if: >-
+      ${{
+        always() &&
+        (
+          (github.event_name == 'push' && needs.changes.outputs.backend == 'true') ||
+          (github.event_name == 'workflow_dispatch' && inputs.rebuild_backend == true)
+        )
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -187,7 +210,14 @@ jobs:
   build-frontend:
     name: Build frontend image
     needs: changes
-    if: github.event_name == 'push' && needs.changes.outputs.frontend == 'true'
+    if: >-
+      ${{
+        always() &&
+        (
+          (github.event_name == 'push' && needs.changes.outputs.frontend == 'true') ||
+          (github.event_name == 'workflow_dispatch' && inputs.rebuild_frontend == true)
+        )
+      }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -235,9 +265,10 @@ jobs:
     if: >-
       ${{
         always() &&
-        github.event_name == 'push' &&
+        github.event_name != 'pull_request' &&
         needs.terraform.result == 'success' &&
         needs.prepare-deployment.result == 'success' &&
+        (github.event_name == 'push' || inputs.rebuild_backend == true || inputs.rebuild_frontend == true) &&
         (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
         (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
       }}
