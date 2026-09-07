@@ -6,9 +6,9 @@ those services are not included in this Compose file.
 
 ## Configuration
 
-Set the frontend's public values in `blog/.env`. `BACKEND_URL` must be the
-public API URL that a visitor's browser can reach. These values are embedded
-into the frontend image during `docker compose build`.
+Set the frontend's public values in `BLOG_ENV`. `BACKEND_URL` must be the
+public API URL that a visitor's browser can reach. GitHub Actions writes these
+values to `blog/.env` while building the frontend image.
 
 Configure `backend/.env` from `backend/.env.example` with the database,
 Supabase JWK set, and storage credentials. `PORT` is optional and defaults to
@@ -16,20 +16,14 @@ Supabase JWK set, and storage credentials. `PORT` is optional and defaults to
 
 ## Run
 
-```sh
-docker compose up --build -d
-```
+Production images are built in GitHub Actions and published to GitHub Container
+Registry. The server pulls the commit-tagged images and starts them with Docker
+Compose; it does not build the applications.
 
 The frontend listens on port `4321`; the API listens on port `8080`. For a
 public deployment, place a TLS reverse proxy in front of them and route the
 public API hostname to port `8080`.
 
-After changing a frontend environment value, rebuild the frontend image:
-
-```sh
-docker compose build frontend
-docker compose up -d frontend
-```
-
-Docker Desktop (or another Docker engine) must be running before building or
-starting the stack.
+The `build-backend` and `build-frontend` jobs use independent GitHub Actions
+Buildx caches. The backend's existing `cargo-chef` stages cache compiled Cargo
+dependencies separately from application source changes.

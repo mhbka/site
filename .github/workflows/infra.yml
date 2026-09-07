@@ -86,7 +86,6 @@ jobs:
       SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
       API_DOMAIN: ${{ vars.API_DOMAIN }}
       ACME_EMAIL: ${{ vars.ACME_EMAIL }}
-      BLOG_ENV: ${{ secrets.BLOG_ENV }}
       BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
 
     steps:
@@ -128,75 +127,102 @@ jobs:
 
       - name: Write deployment environment files
         run: |
-          printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
-          printf '%s\n' "$BLOG_ENV" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/blog/.env > /dev/null'
           printf '%s\n' "$BACKEND_ENV" \
             | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/backend/.env > /dev/null'
 
   build-backend:
     name: Build backend image
-    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.prepare-deployment.result == 'success'
-    needs:
-      - terraform
-      - prepare-deployment
+    if: github.event_name == 'push' && needs.prepare-deployment.result == 'success'
+    needs: prepare-deployment
     runs-on: ubuntu-latest
-    env:
-      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
-      DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
 
     steps:
-      - name: Write deployment SSH key
-        env:
-          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
-        run: |
-          install -d -m 700 "$RUNNER_TEMP/ssh"
-          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
-          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Set image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-backend:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build backend image
-        run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
-          "$DROPLET_SSH_USER@$INSTANCE_IP"
-          'cd /opt/site && docker compose build backend'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.image.outputs.name }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
 
   build-frontend:
     name: Build frontend image
-    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-backend.result == 'success'
-    needs:
-      - terraform
-      - build-backend
+    if: github.event_name == 'push' && needs.prepare-deployment.result == 'success'
+    needs: prepare-deployment
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
     env:
-      INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
-      DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+      BLOG_ENV: ${{ secrets.BLOG_ENV }}
 
     steps:
-      - name: Write deployment SSH key
-        env:
-          INSTANCE_SSH_PRIVATE_KEY: ${{ secrets.INSTANCE_SSH_PRIVATE_KEY }}
-        run: |
-          install -d -m 700 "$RUNNER_TEMP/ssh"
-          printf '%s' "$INSTANCE_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/ssh/id_ed25519"
-          chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Write frontend build environment
+        run: printf '%s\n' "$BLOG_ENV" > blog/.env
+
+      - name: Set image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-frontend:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build frontend image
-        run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
-          "$DROPLET_SSH_USER@$INSTANCE_IP"
-          'cd /opt/site && docker compose build frontend'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./blog
+          push: true
+          tags: ${{ steps.image.outputs.name }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
 
   start-compose:
     name: Start application and Caddy
-    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-frontend.result == 'success'
+    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success'
     needs:
       - terraform
+      - build-backend
       - build-frontend
     runs-on: ubuntu-latest
     env:
       INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
       DROPLET_SSH_USER: ${{ vars.DIGITALOCEAN_SSH_USER }}
+      SITE_DOMAIN: ${{ vars.SITE_DOMAIN }}
+      API_DOMAIN: ${{ vars.API_DOMAIN }}
+      ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+      BACKEND_IMAGE: ${{ needs.build-backend.outputs.image }}
+      FRONTEND_IMAGE: ${{ needs.build-frontend.outputs.image }}
+      GHCR_USERNAME: ${{ github.repository_owner }}
+      GHCR_PULL_TOKEN: ${{ secrets.GHCR_PULL_TOKEN }}
 
     steps:
       - name: Write deployment SSH key
@@ -208,7 +234,12 @@ jobs:
           chmod 600 "$RUNNER_TEMP/ssh/id_ed25519"
 
       - name: Start application and Caddy
-        run: >-
-          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10
-          "$DROPLET_SSH_USER@$INSTANCE_IP"
-          'cd /opt/site && docker compose up -d --remove-orphans'
+        run: |
+          printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\nBACKEND_IMAGE=%s\nFRONTEND_IMAGE=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL" "$BACKEND_IMAGE" "$FRONTEND_IMAGE" \
+            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
+          if [ -n "$GHCR_PULL_TOKEN" ]; then
+            printf '%s' "$GHCR_PULL_TOKEN" \
+              | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
+          fi
+          ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" \
+            'cd /opt/site && docker compose pull && docker compose up -d --remove-orphans'

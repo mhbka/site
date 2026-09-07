@@ -93,12 +93,19 @@ INSTANCE_SSH_PUBLIC_KEY
 INSTANCE_SSH_PRIVATE_KEY
 BLOG_ENV
 BACKEND_ENV
+GHCR_PULL_TOKEN                 # required only if the GHCR images remain private
 ```
 
 `INSTANCE_SSH_PUBLIC_KEY` and `INSTANCE_SSH_PRIVATE_KEY` must be the matching pair used
 to access the Ubuntu instance. `BLOG_ENV` and `BACKEND_ENV` are complete `.env`
-file contents. The workflow excludes `.env` files from the repository sync,
-writes those files on the instance, then runs `docker compose up -d --build`.
+file contents. The workflow uses `BLOG_ENV` only while building the frontend
+image in GitHub Actions, and writes `BACKEND_ENV` on the instance at deploy
+time. It publishes the images to GHCR, then the instance pulls them and runs
+`docker compose up -d` without building.
+
+Set the GHCR packages public to omit `GHCR_PULL_TOKEN`. For private packages,
+create a token with `read:packages` access, store it as `GHCR_PULL_TOKEN`, and
+use a token owner that can read the package.
 
 ## Caddy and Cloudflare
 
