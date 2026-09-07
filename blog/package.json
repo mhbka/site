@@ -11,7 +11,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-		"test": "node --experimental-strip-types --test src/lib/*.test.ts src/components/editor/plugins/*.test.ts"
+    "test": "node --experimental-strip-types --test src/lib/*.test.ts src/components/editor/plugins/*.test.ts"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",
@@ -24,6 +24,7 @@
     "@milkdown/theme-nord": "^7.22.0",
     "@supabase/ssr": "^0.12.4",
     "astro": "^7.1.6",
+    "hyparquet": "^1.30.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sharp": "^0.35.0"

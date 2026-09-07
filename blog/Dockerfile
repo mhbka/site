@@ -19,6 +19,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/assets/bash_org_max_5_lines_scored.parquet ./data/bash_org_max_5_lines_scored.parquet
 
 RUN useradd --system --create-home app \
     && chown -R app:app /app

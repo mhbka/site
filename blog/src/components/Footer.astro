@@ -1,9 +1,16 @@
 ---
+import BashQuoteOutput from './bash-quote/BashQuoteOutput.astro';
 import Link from './ui/Link.astro';
+
+interface Props {
+	renderQuote?: boolean;
+}
+
+const { renderQuote = true } = Astro.props;
 ---
 
 <footer>
-	enjoy your life ~
+	{renderQuote ? <BashQuoteOutput mini /> : <i>~ enjoy your life ~</i>}
 	<div class="social-links">
 		<Link href="https://github.com/mhbka/site" target="_blank">
 			<svg viewBox="0 0 16 16" aria-hidden="true" width="32" height="32" astro-icon="social/github"
@@ -21,6 +28,8 @@ import Link from './ui/Link.astro';
 		color: var(--color-muted);
 		text-align: center;
 	}
+	footer :global(.quote-output) { width: 50%; margin: 1rem auto 0; }
+	@media (max-width: 720px) { footer :global(.quote-output) { width: 100%; } }
 	.social-links {
 		display: flex;
 		justify-content: center;

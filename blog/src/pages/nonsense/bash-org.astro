@@ -1,0 +1,22 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import BashQuoteOutput from '../../components/bash-quote/BashQuoteOutput.astro';
+import BashQuoteParameterSliders from '../../components/bash-quote/BashQuoteParameterSliders.astro';
+import PageLayout from '../../components/PageLayout.astro';
+import { getPageAuth } from '../../lib/page-auth.ts';
+
+const { isLoggedIn } = await getPageAuth(Astro.request, Astro.cookies);
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead title="bash.org quote picker" />
+	</head>
+	<body>
+		<PageLayout isLoggedIn={isLoggedIn} renderQuote={false} title="bash.org quote picker" titleClass="title-wave">
+			<BashQuoteParameterSliders />
+			<BashQuoteOutput />
+		</PageLayout>
+	</body>
+</html>

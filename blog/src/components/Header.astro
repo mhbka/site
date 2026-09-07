@@ -16,6 +16,12 @@ const { isLoggedIn = false } = Astro.props;
 			<HeaderLink href="/">home</HeaderLink>
 			<HeaderLink href="/me">me</HeaderLink>
 			<HeaderLink href="/blog">blog</HeaderLink>
+			<details class="nav-dropdown">
+				<summary>nonsense</summary>
+				<div class="nav-dropdown__items">
+					<HeaderLink href="/nonsense/bash-org">bash.org quote picker</HeaderLink>
+				</div>
+			</details>
 			<ThemeSelector />
 			<LoginButton isLoggedIn={isLoggedIn} />
 		</div>
@@ -49,9 +55,21 @@ const { isLoggedIn = false } = Astro.props;
 		display: grid;
 		gap: 0.75rem;
 	}
+	.nav-dropdown summary {
+		cursor: pointer;
+		color: var(--color-heading);
+	}
+	.nav-dropdown__items {
+		display: grid;
+		gap: 0.75rem;
+		margin-top: 0.75rem;
+		padding-left: 1rem;
+	}
 	@media (max-width: 720px) {
 		header { padding: 1em; }
 		nav { flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem; }
 		.internal-links { display: flex; gap: 0.75rem; }
+		.nav-dropdown { position: relative; }
+		.nav-dropdown__items { position: absolute; z-index: 1; min-width: max-content; padding: 0.75rem; margin-top: 0.5rem; background: var(--color-surface); box-shadow: var(--shadow-header); }
 	}
 </style>

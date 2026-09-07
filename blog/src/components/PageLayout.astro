@@ -7,11 +7,12 @@ import PageTitle from './PageTitle.astro';
 interface Props {
 	isLoggedIn?: boolean;
 	mainClass?: string;
+	renderQuote?: boolean;
 	title?: string;
 	titleClass?: string;
 }
 
-const { isLoggedIn = false, mainClass, title, titleClass } = Astro.props;
+const { isLoggedIn = false, mainClass, renderQuote = true, title, titleClass } = Astro.props;
 ---
 
 <div class="site-layout">
@@ -30,6 +31,6 @@ const { isLoggedIn = false, mainClass, title, titleClass } = Astro.props;
 			</div>
 			<hr />
 		</main>
-		<Footer />
+		<Footer renderQuote={renderQuote} />
 	</div>
 </div>

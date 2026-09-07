@@ -1,0 +1,94 @@
+---
+import Range from '../ui/Range.astro';
+import { SCORE_NAMES } from '../../lib/models/bash-quotes.ts';
+
+const scoreLabel = (name: string) => name.replaceAll('_', ' ');
+---
+
+<section class="score-limits" aria-label="quote score limits">
+	<p class="quote-count" aria-live="polite">loading matching quotes…</p>
+	{SCORE_NAMES.map((name) => (
+		<fieldset data-score={name}>
+			<legend>{scoreLabel(name)}</legend>
+			<label>lower <output data-lower-output>0.00</output><Range min="0" max="1" step="0.01" value="0" data-limit="lower" /></label>
+			<label>upper <output data-upper-output>1.00</output><Range min="0" max="1" step="0.01" value="1" data-limit="upper" /></label>
+		</fieldset>
+	))}
+</section>
+
+<script>
+	import { getBashQuoteCount } from '../../lib/api/bash-quotes.ts';
+	import { loadBashQuoteParameters, saveBashQuoteParameters } from '../../lib/local-storage/bash-quote-parameters.ts';
+	import type { ScoreLimits, ScoreName } from '../../lib/models/bash-quotes.ts';
+
+	const sliders = document.querySelector<HTMLElement>('.score-limits');
+	if (!sliders) throw new Error('quote parameter sliders are missing');
+	const root = sliders;
+	const count = root.querySelector<HTMLElement>('.quote-count')!;
+
+	function readParameters(): ScoreLimits {
+		const parameters = {} as ScoreLimits;
+		root.querySelectorAll<HTMLElement>('[data-score]').forEach((field) => {
+			const name = field.dataset.score as ScoreName;
+			parameters[name] = {
+				lower: Number(field.querySelector<HTMLInputElement>('[data-limit="lower"]')!.value),
+				upper: Number(field.querySelector<HTMLInputElement>('[data-limit="upper"]')!.value),
+			};
+		});
+		return parameters;
+	}
+
+	function updateOutput(input: HTMLInputElement) {
+		input.closest<HTMLElement>('[data-score]')!
+			.querySelector<HTMLOutputElement>(`[data-${input.dataset.limit}-output]`)!.value = Number(input.value).toFixed(2);
+	}
+
+	function applySavedParameters() {
+		const parameters = loadBashQuoteParameters();
+		root.querySelectorAll<HTMLElement>('[data-score]').forEach((field) => {
+			const limits = parameters[field.dataset.score as ScoreName];
+			for (const limit of ['lower', 'upper'] as const) {
+				const input = field.querySelector<HTMLInputElement>(`[data-limit="${limit}"]`)!;
+				input.value = String(limits[limit]);
+				updateOutput(input);
+			}
+		});
+	}
+
+	async function updateCount() {
+		try {
+			count.textContent = `${(await getBashQuoteCount()).toLocaleString()} matching quotes`;
+		} catch (error) {
+			count.textContent = error instanceof Error ? error.message : 'unable to load quotes';
+		}
+	}
+
+	root.querySelectorAll<HTMLInputElement>('[data-limit]').forEach((input) => {
+		input.addEventListener('input', () => {
+			const field = input.closest<HTMLElement>('[data-score]')!;
+			const otherLimit = input.dataset.limit === 'lower' ? 'upper' : 'lower';
+			const otherInput = field.querySelector<HTMLInputElement>(`[data-limit="${otherLimit}"]`)!;
+			if ((input.dataset.limit === 'lower' && input.value > otherInput.value) || (input.dataset.limit === 'upper' && input.value < otherInput.value)) {
+				otherInput.value = input.value;
+				updateOutput(otherInput);
+			}
+			updateOutput(input);
+			saveBashQuoteParameters(readParameters());
+		});
+		input.addEventListener('change', () => void updateCount());
+	});
+
+	applySavedParameters();
+	void updateCount();
+</script>
+
+<style>
+	.score-limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin: 1rem 0; }
+	.quote-count { grid-column: 1 / -1; margin: 0; color: var(--color-muted); }
+	fieldset { min-width: 0; border: var(--border-width) solid var(--color-subtle); }
+	legend { text-transform: lowercase; }
+	label { display: grid; grid-template-columns: auto 3rem; gap: 0.25rem 0.5rem; align-items: center; font-size: 0.8em; }
+	label input { grid-column: 1 / -1; width: 100%; padding: 0; }
+	output { text-align: right; }
+	@media (max-width: 720px) { .score-limits { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,89 @@
+---
+import Button from '../ui/Button.astro';
+
+interface Props {
+	mini?: boolean;
+}
+
+const { mini = false } = Astro.props;
+---
+
+<section class:list={['quote-output', { 'quote-output--mini': mini }]} aria-label="bash.org quote">
+	{mini ? (
+		<div class="quote-actions">
+			<button type="button" class="quote-retry" aria-label="get another quote" title="get another quote">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8" /><path d="M21 3v5h-5" /></svg>
+			</button>
+			<a class="quote-settings" href="/nonsense/bash-org" aria-label="quote settings" title="quote settings">
+				<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" /></svg>
+			</a>
+		</div>
+	) : (
+		<Button type="button" class="quote-retry">get another quote</Button>
+	)}
+	<pre class="quote-text" aria-live="polite"><code>loading…</code></pre>
+</section>
+
+<script>
+	import { getRandomBashQuote } from '../../lib/api/bash-quotes.ts';
+
+	document.querySelectorAll<HTMLElement>('.quote-output').forEach((output) => {
+		const quote = output.querySelector<HTMLElement>('.quote-text code')!;
+		const retry = output.querySelector<HTMLButtonElement>('.quote-retry')!;
+		let isLoading = false;
+
+		function updateRetryState() {
+			retry.disabled = isLoading;
+		}
+
+		function renderQuote(text: string) {
+			const content = document.createDocumentFragment();
+			text.split('\n').forEach((line, index) => {
+				if (index > 0) content.append('\n');
+				const speaker = line.match(/^(<[^>]*>|\[[^\]]*\]|[^\s:]+:)(.*)$/);
+				if (!speaker) {
+					content.append(line);
+					return;
+				}
+				const name = document.createElement('span');
+				name.className = 'quote-speaker';
+				name.textContent = speaker[1];
+				content.append(name, speaker[2]);
+			});
+			quote.replaceChildren(content);
+		}
+
+		async function updateQuote() {
+			isLoading = true;
+			updateRetryState();
+			try {
+				const result = await getRandomBashQuote();
+				renderQuote(result.quote ? result.quote.quote : 'No quotes match these limits.');
+			} catch (error) {
+				const message = error instanceof Error ? error.message : 'unable to load quotes';
+				renderQuote(message === 'unable to load quotes' ? 'Unable to load a quote.' : message);
+			} finally {
+				isLoading = false;
+				updateRetryState();
+			}
+		}
+
+		retry.addEventListener('click', () => void updateQuote());
+		void updateQuote();
+	});
+</script>
+
+<style>
+	.quote-text { min-height: 5lh; padding: 1rem; border-radius: var(--radius-media); white-space: pre-wrap; overflow-wrap: anywhere; background: var(--color-subtle); color: var(--color-text); }
+	.quote-text code { padding: 0; background: transparent; font-family: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace; font-size: 0.875rem; }
+	.quote-text :global(.quote-speaker) { color: var(--color-heading); }
+	.quote-output--mini { text-align: left; }
+	.quote-actions { display: flex; justify-content: center; gap: 0.25rem; margin-bottom: 1em; }
+	.quote-output--mini .quote-retry, .quote-settings { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: transparent; color: var(--color-muted); cursor: pointer; }
+	.quote-output--mini .quote-retry:hover, .quote-output--mini .quote-retry:focus-visible, .quote-settings:hover, .quote-settings:focus-visible { color: var(--color-text); }
+	.quote-output--mini .quote-retry:disabled { cursor: wait; opacity: 0.6; }
+	.quote-output--mini svg, .quote-settings svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; }
+	.quote-settings svg { fill: currentColor; stroke: none; }
+	.quote-output--mini .quote-text { min-height: 0; margin: 0; padding: 0.5rem; border-radius: calc(var(--radius-media) / 2); font-size: 0.75rem; }
+	.quote-output--mini .quote-text code { font-size: inherit; }
+</style>
