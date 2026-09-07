@@ -14,6 +14,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  changes:
+    name: Detect changed components
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'blog/**'
+
   terraform:
     name: Terraform plan or apply
     runs-on: ubuntu-latest
@@ -132,8 +151,8 @@ jobs:
 
   build-backend:
     name: Build backend image
-    if: github.event_name == 'push' && needs.prepare-deployment.result == 'success'
-    needs: prepare-deployment
+    needs: changes
+    if: github.event_name == 'push' && needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -167,8 +186,8 @@ jobs:
 
   build-frontend:
     name: Build frontend image
-    if: github.event_name == 'push' && needs.prepare-deployment.result == 'success'
-    needs: prepare-deployment
+    needs: changes
+    if: github.event_name == 'push' && needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -207,11 +226,21 @@ jobs:
 
   start-compose:
     name: Start application and Caddy
-    if: github.event_name == 'push' && needs.terraform.result == 'success' && needs.build-backend.result == 'success' && needs.build-frontend.result == 'success'
     needs:
+      - changes
       - terraform
+      - prepare-deployment
       - build-backend
       - build-frontend
+    if: >-
+      ${{
+        always() &&
+        github.event_name == 'push' &&
+        needs.terraform.result == 'success' &&
+        needs.prepare-deployment.result == 'success' &&
+        (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+        (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped')
+      }}
     runs-on: ubuntu-latest
     env:
       INSTANCE_IP: ${{ needs.terraform.outputs.instance_ip }}
@@ -235,8 +264,15 @@ jobs:
 
       - name: Start application and Caddy
         run: |
-          printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\nBACKEND_IMAGE=%s\nFRONTEND_IMAGE=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL" "$BACKEND_IMAGE" "$FRONTEND_IMAGE" \
-            | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077 && tee /opt/site/.env > /dev/null'
+          {
+            printf 'SITE_DOMAIN=%s\nAPI_DOMAIN=%s\nACME_EMAIL=%s\n' "$SITE_DOMAIN" "$API_DOMAIN" "$ACME_EMAIL"
+            if [ -n "$BACKEND_IMAGE" ]; then
+              printf 'BACKEND_IMAGE=%s\n' "$BACKEND_IMAGE"
+            fi
+            if [ -n "$FRONTEND_IMAGE" ]; then
+              printf 'FRONTEND_IMAGE=%s\n' "$FRONTEND_IMAGE"
+            fi
+          } | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" 'umask 077; touch /opt/site/.env; while IFS= read -r line; do key=${line%%=*}; sed -i "/^${key}=/d" /opt/site/.env; printf "%s\n" "${line}" >> /opt/site/.env; done'
           if [ -n "$GHCR_PULL_TOKEN" ]; then
             printf '%s' "$GHCR_PULL_TOKEN" \
               | ssh -i "$RUNNER_TEMP/ssh/id_ed25519" -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=10 "$DROPLET_SSH_USER@$INSTANCE_IP" "docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin"
