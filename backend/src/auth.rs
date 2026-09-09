@@ -36,7 +36,6 @@ impl axum::response::IntoResponse for AuthError {
     }
 }
 
-#[axum::async_trait]
 impl FromRequestParts<AppState> for AuthUser {
     type Rejection = AuthError;
 
@@ -103,7 +102,6 @@ impl FromRequestParts<AppState> for AuthUser {
 /// anonymous users (e.g. showing your own drafts in a public listing).
 pub struct OptionalAuthUser(pub Option<AuthUser>);
 
-#[axum::async_trait]
 impl FromRequestParts<AppState> for OptionalAuthUser {
     type Rejection = std::convert::Infallible;
 

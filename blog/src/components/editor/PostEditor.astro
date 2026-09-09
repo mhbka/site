@@ -2,7 +2,10 @@
 import type { Post } from '../../lib/models/posts.ts';
 import Button from '../ui/Button.astro';
 import FormattedDate from '../FormattedDate.astro';
-import Input from '../ui/Input.astro';interface Props {
+import Input from '../ui/Input.astro';
+import TagInput from '../TagInput.astro';
+
+interface Props {
 	post?: Post;
 }
 
@@ -16,18 +19,15 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 		<p class="post-meta">[Draft]</p>
 		<Input id="post-title" class="post-title" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
 		<div class="post-meta">
-			{createdAt && <div class="post-metadata">Created on <FormattedDate date={createdAt} includeTime /></div>}
-			{updatedAt && <div class="post-metadata">Last updated on <FormattedDate date={updatedAt} includeTime /></div>}
+			{createdAt && <div class="post-metadata">created on <FormattedDate date={createdAt} includeTime /></div>}
+			{updatedAt && <div class="post-metadata">last updated on <FormattedDate date={updatedAt} includeTime /></div>}
 		</div>
 		<hr />
 	</header>
 
 	<div class="post-properties">
-		<div class="tag-input" data-tag-input>
-			<ul class="tag-list" data-tag-list aria-label="Post tags"></ul>
-			<Input id="post-tags" name="tags" placeholder="Tags" autocomplete="off" aria-label="Post tags" list="post-tag-suggestions" />
-			<datalist id="post-tag-suggestions"></datalist>
-		</div>
+		<TagInput id="post-tags" name="tags" label="Tags" initialTags={post?.tags ?? []} managed={false} />
+		<datalist id="post-tag-suggestions"></datalist>
 		<details class="post-settings">
 			<summary>Post settings</summary>
 			<Input id="post-slug" name="slug" placeholder="Slug" autocomplete="off" value={post?.slug ?? ''} aria-describedby="slug-help" />
@@ -110,7 +110,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 			removeButton.className = 'ui-button tag';
 			removeButton.setAttribute('aria-label', `Remove ${tag} tag`);
 			removeButton.dataset.tag = tag;
-			removeButton.textContent = `${tag} Ã—`;
+			removeButton.textContent = `${tag} ×`;
 			item.append(removeButton);
 			return item;
 		}));

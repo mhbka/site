@@ -20,13 +20,13 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_posts).post(create_post))
         .route("/drafts", get(list_drafts))
-        .route("/:slug", get(get_post_by_slug))
+        .route("/{slug}", get(get_post_by_slug))
         .route(
-            "/id/:id",
+            "/id/{id}",
             get(get_post_by_id).put(update_post).delete(delete_post),
         )
-        .route("/id/:id/publish", post(publish_post))
-        .route("/id/:id/draft", post(move_post_to_draft))
+        .route("/id/{id}/publish", post(publish_post))
+        .route("/id/{id}/draft", post(move_post_to_draft))
 }
 
 async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {

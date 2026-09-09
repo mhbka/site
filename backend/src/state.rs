@@ -20,6 +20,8 @@ impl AppState {
         s3_access_key_secret: String,
         s3_blogpost_bucket_name: String,
         s3_blogpost_bucket_url: String,
+        s3_pix_bucket_name: String,
+        s3_pix_bucket_url: String,
     ) -> Self {
         let s3 = S3::new(
             s3_account_id,
@@ -27,6 +29,8 @@ impl AppState {
             s3_access_key_secret,
             s3_blogpost_bucket_name,
             s3_blogpost_bucket_url,
+            s3_pix_bucket_name,
+            s3_pix_bucket_url,
         )
         .await;
         Self {

@@ -14,6 +14,19 @@ function createFetch(response: Response) {
 	};
 }
 
+function createFetchSequence(responses: Response[]) {
+	const calls: Array<[string, RequestInit | undefined]> = [];
+	return {
+		calls,
+		fetch: async (input: string | URL | Request, init?: RequestInit) => {
+			calls.push([String(input), init]);
+			const response = responses.shift();
+			if (!response) throw new Error('Unexpected request');
+			return response;
+		},
+	};
+}
+
 test('sends authenticated write requests to the matching backend route', async () => {
 	const mock = createFetch(
 		Response.json({ id: 'post-1', title: 'Hello', slug: 'hello', thumbnailUrl: null }),
@@ -150,6 +163,36 @@ test('gets the current user author status with their access token', async () => 
 	const [url, options] = mock.calls[0];
 	assert.equal(url, 'https://api.example.test/users/is-author');
 	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+});
+
+test('lists pix and requests uploads with the current user token', async () => {
+	const listMock = createFetch(Response.json({ images: [], nextBefore: null, hasMore: false }));
+	const listApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: listMock.fetch });
+	assert.deepEqual(await listApi.listPix(60, 'image-1', 'cats'), { images: [], nextBefore: null, hasMore: false });
+	assert.equal(listMock.calls[0][0], 'https://api.example.test/pix?limit=60&before=image-1&tag=cats');
+
+	const uploadMock = createFetch(Response.json({ imageId: 'image-1', uploadUrl: 'upload', publicUrl: 'public' }));
+	const uploadApi = createBlogApi({ baseUrl: 'https://api.example.test', fetch: uploadMock.fetch });
+	await uploadApi.createPixUpload('image/png', [], 'access-token');
+	assert.equal(uploadMock.calls[0][0], 'https://api.example.test/pix/uploads');
+	assert.equal(new Headers(uploadMock.calls[0][1]?.headers).get('Authorization'), 'Bearer access-token');
+});
+
+test('uploads pix through its prepared upload URL and completes it', async () => {
+	const mock = createFetchSequence([
+		Response.json({ imageId: 'image/id', uploadUrl: 'https://uploads.example.test/image' }),
+		new Response(null, { status: 200 }),
+		Response.json({ id: 'image/id', publicUrl: 'public', tags: ['cats'], createdAt: '2026-01-01T00:00:00Z' }),
+	]);
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+	const file = new Blob(['pix'], { type: 'image/png' });
+
+	assert.equal((await api.uploadPix(file, ['cats'], 'access-token')).id, 'image/id');
+	assert.equal(mock.calls[0][0], 'https://api.example.test/pix/uploads');
+	assert.equal(mock.calls[1][0], 'https://uploads.example.test/image');
+	assert.equal(mock.calls[1][1]?.method, 'PUT');
+	assert.equal(mock.calls[2][0], 'https://api.example.test/pix/uploads/image%2Fid/complete');
+	assert.equal(new Headers(mock.calls[2][1]?.headers).get('Authorization'), 'Bearer access-token');
 });
 
 test('throws an ApiError that includes the response status and body', async () => {

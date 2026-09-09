@@ -12,9 +12,9 @@ use crate::{auth::AuthUser, state::AppState};
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/post/:post_id", get(list_comments).post(create_comment))
+        .route("/post/{post_id}", get(list_comments).post(create_comment))
         .route(
-            "/:id",
+            "/{id}",
             axum::routing::put(update_comment).delete(delete_comment),
         )
 }

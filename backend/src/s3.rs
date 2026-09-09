@@ -14,6 +14,8 @@ pub struct S3 {
     pub client: s3::Client,
     pub blogpost_bucket_name: String,
     pub blogpost_bucket_url: String,
+    pub pix_bucket_name: String,
+    pub pix_bucket_url: String,
 }
 
 impl S3 {
@@ -23,12 +25,63 @@ impl S3 {
         s3_access_key_secret: String,
         s3_blogpost_bucket_name: String,
         s3_blogpost_bucket_url: String,
+        s3_pix_bucket_name: String,
+        s3_pix_bucket_url: String,
     ) -> Self {
         let client = init_s3_client(s3_account_id, s3_access_key_id, s3_access_key_secret).await;
         Self {
             client,
             blogpost_bucket_name: s3_blogpost_bucket_name,
             blogpost_bucket_url: s3_blogpost_bucket_url,
+            pix_bucket_name: s3_pix_bucket_name,
+            pix_bucket_url: s3_pix_bucket_url,
+        }
+    }
+
+    pub async fn generate_presigned_pix_upload_url(
+        &self,
+        image_id: Uuid,
+        content_type: &str,
+    ) -> Result<(String, UploadUrls), anyhow::Error> {
+        let extension = image_extension(content_type).ok_or(anyhow!("unsupported content type"))?;
+        let key = format!("images/{image_id}.{extension}");
+        let presigning_config = PresigningConfig::expires_in(BLOGPOST_MEDIA_PRESIGNED_URL_EXPIRY)?;
+        let upload_url = self
+            .client
+            .put_object()
+            .bucket(&self.pix_bucket_name)
+            .key(&key)
+            .content_type(content_type)
+            .presigned(presigning_config)
+            .await
+            .map(|r| r.uri().to_string())?;
+        Ok((
+            key.clone(),
+            UploadUrls {
+                upload_url,
+                public_url: format!("{}/{}", self.pix_bucket_url.trim_end_matches('/'), key),
+            },
+        ))
+    }
+
+    pub async fn pix_exists(&self, key: &str) -> Result<bool, anyhow::Error> {
+        match self
+            .client
+            .head_object()
+            .bucket(&self.pix_bucket_name)
+            .key(key)
+            .send()
+            .await
+        {
+            Ok(_) => Ok(true),
+            Err(error)
+                if error
+                    .as_service_error()
+                    .is_some_and(|service| service.is_not_found()) =>
+            {
+                Ok(false)
+            }
+            Err(error) => Err(error.into()),
         }
     }
 
@@ -104,7 +157,7 @@ async fn init_s3_client(
     s3::Client::new(&config)
 }
 
-fn image_extension(content_type: &str) -> Option<&'static str> {
+pub fn image_extension(content_type: &str) -> Option<&'static str> {
     match content_type {
         "image/avif" => Some("avif"),
         "image/gif" => Some("gif"),

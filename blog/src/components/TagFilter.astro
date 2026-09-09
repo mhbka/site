@@ -5,16 +5,17 @@ import type { TagSummary } from '../lib/models/tags.ts';
 interface Props {
 	tags: TagSummary[];
 	selectedTag?: string;
+	basePath?: string;
 }
 
-const { tags, selectedTag } = Astro.props;
+const { tags, selectedTag, basePath = '/blog/' } = Astro.props;
 ---
 
 {tags.length > 0 && (
-	<nav class="tag-filter" aria-label="Filter posts by tag" data-tag-filter>
-		<Link class:list={['tag-filter__tag', !selectedTag && 'tag-filter__tag--selected']} href="/blog/" data-tag="">all</Link>
+	<nav class="tag-filter" aria-label="Filter posts by tag" data-tag-filter data-client-filter={basePath === '/blog/' ? 'true' : 'false'}>
+		<Link class:list={['tag-filter__tag', !selectedTag && 'tag-filter__tag--selected']} href={basePath} data-tag="">all</Link>
 		{tags.map(({ tag, count }) => (
-			<Link class:list={['tag-filter__tag', selectedTag === tag && 'tag-filter__tag--selected']} href={`/blog/?tag=${encodeURIComponent(tag)}`} data-tag={tag}>
+			<Link class:list={['tag-filter__tag', selectedTag === tag && 'tag-filter__tag--selected']} href={`${basePath}?tag=${encodeURIComponent(tag)}`} data-tag={tag}>
 				#{tag} <span aria-label={`${count} posts`}>({count})</span>
 			</Link>
 		))}
@@ -40,6 +41,7 @@ const { tags, selectedTag } = Astro.props;
 	}
 
 	filter?.addEventListener('click', (event) => {
+		if (filter.dataset.clientFilter !== 'true') return;
 		const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('[data-tag]');
 		if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 

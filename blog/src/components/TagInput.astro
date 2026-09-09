@@ -1,0 +1,54 @@
+---
+import Input from './ui/Input.astro';
+
+interface Props {
+	id: string;
+	name: string;
+	label: string;
+	initialTags?: string[];
+	managed?: boolean;
+}
+
+const { id, name, label, initialTags = [], managed = true } = Astro.props;
+---
+
+<div class="tag-input" data-tag-input={managed ? true : undefined} data-initial-tags={JSON.stringify(initialTags)}>
+	<ul class="tag-list" data-tag-list aria-label={label}></ul>
+	<Input id={id} placeholder={label} autocomplete="off" aria-label={label} />
+	<input type="hidden" name={name} data-tag-value value={JSON.stringify(initialTags)} />
+</div>
+
+<script>
+	import { addTag, normalizeTag } from '../lib/tags.ts';
+
+	document.querySelectorAll<HTMLElement>('[data-tag-input]').forEach((root) => {
+		const input = root.querySelector<HTMLInputElement>('.ui-input');
+		const list = root.querySelector<HTMLUListElement>('[data-tag-list]');
+		const value = root.querySelector<HTMLInputElement>('[data-tag-value]');
+		if (!input || !list || !value) return;
+		let tags: string[] = JSON.parse(root.dataset.initialTags ?? '[]');
+		const publish = () => { value.value = JSON.stringify(tags); root.dispatchEvent(new CustomEvent('tags:change', { bubbles: true, detail: tags })); };
+		const render = () => list.replaceChildren(...tags.map((tag) => {
+			const item = document.createElement('li');
+			const button = document.createElement('button');
+			button.className = 'ui-button tag'; button.type = 'button'; button.dataset.tag = tag; button.ariaLabel = `Remove ${tag} tag`; button.textContent = `${tag} ×`;
+			item.append(button); return item;
+		}));
+		const commit = () => { tags = addTag(tags, input.value); input.value = ''; render(); publish(); };
+		render(); publish();
+		input.addEventListener('input', () => { input.value = normalizeTag(input.value); });
+		input.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); commit(); }
+			if (event.key === 'Backspace' && !input.value && tags.length) { tags = tags.slice(0, -1); render(); publish(); }
+		});
+		list.addEventListener('click', (event) => { const button = (event.target as Element).closest<HTMLButtonElement>('[data-tag]'); if (!button?.dataset.tag) return; tags = tags.filter((tag) => tag !== button.dataset.tag); render(); publish(); input.focus(); });
+	});
+</script>
+
+<style>
+	.tag-input { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; padding: .4rem; }
+	.tag-input:focus-within { border-radius: var(--radius-focus); box-shadow: 0 0 0 var(--focus-ring-width) var(--color-accent); }
+	.tag-input :global(.ui-input) { min-width: 12rem; flex: 1; padding: .3rem; border: 0; outline: 0; background: var(--color-transparent); }
+	.tag-list { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; padding: 0; list-style: none; }
+	.tag { padding: .2rem .55rem; border-radius: var(--radius-tag); background: var(--color-subtle); color: var(--color-text); font-size: .8rem; }
+</style>

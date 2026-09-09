@@ -1,0 +1,45 @@
+---
+import BaseHead from '../../components/BaseHead.astro';
+import FetchError from '../../components/FetchError.astro';
+import PixGallery from '../../components/pix/PixGallery.astro';
+import TagFilter from '../../components/TagFilter.astro';
+import PageLayout from '../../components/PageLayout.astro';
+import { blogApi } from '../../lib/api.ts';
+import { getPageAuth } from '../../lib/page-auth.ts';
+import { normalizeTag } from '../../lib/tags.ts';
+
+const { isLoggedIn, isPix, accessToken } = await getPageAuth(Astro.request, Astro.cookies, { includePix: true });
+const selectedTag = normalizeTag(Astro.url.searchParams.get('tag') ?? '') || undefined;
+const tags = await blogApi.listPixTags().catch(() => []);
+let gallery;
+let errorMessage: string | undefined;
+try {
+	gallery = await blogApi.listPix(60, undefined, selectedTag);
+} catch (error) {
+	console.warn(`Unable to load pix gallery: ${error}`);
+	errorMessage = "couldn't load the gallery :(";
+}
+---
+
+<!doctype html>
+<html lang="en">
+	<head><BaseHead title="pix" /></head>
+	<body>
+		<PageLayout isLoggedIn={isLoggedIn} title="pix" titleClass="title-wave">
+			{
+				errorMessage 
+				? <FetchError message={errorMessage} /> 
+				: <>
+					<TagFilter tags={tags} selectedTag={selectedTag} basePath="/nonsense/pix/" />
+					<PixGallery 
+						images={gallery?.images ?? []} 
+						nextBefore={gallery?.nextBefore ?? null} 
+						hasMore={gallery?.hasMore ?? false} tag={selectedTag} 
+						isPix={isPix} 
+						accessToken={accessToken} 
+					/>
+				  </>
+			}
+		</PageLayout>
+	</body>
+</html>

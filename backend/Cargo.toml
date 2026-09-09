@@ -4,18 +4,19 @@ version = "0.1.0"
 edition = "2021"
  
 [dependencies]
-axum = { version = "0.7", features = ["macros"] }
-axum-extra = { version = "0.9", features = ["typed-header"] }
+axum = { version = "0.8", features = ["macros"] }
+axum-extra = { version = "0.10", features = ["typed-header"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"
  
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
  
-sqlx = { version = "0.7", features = [
-  "runtime-tokio-rustls",
+sqlx = { version = "0.9", features = [
+  "runtime-tokio",
+  "tls-rustls",
   "postgres",
   "uuid",
   "chrono",
@@ -33,3 +34,6 @@ slug = "0.1"
 reqwest = { version = "0.13.4", features = ["json"] }
 aws-sdk-s3 = "1.143.0"
 aws-config = { version = "1.11.0", features = ["behavior-version-latest"] }
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
