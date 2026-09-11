@@ -10,6 +10,7 @@ use crate::models::comments::{Comment, CreateCommentRequest, UpdateCommentReques
 use crate::routes::error::{RouteError, RouteResult};
 use crate::{auth::AuthUser, state::AppState};
 
+/// Builds the comment API routes.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/post/{post_id}", get(list_comments).post(create_comment))
@@ -38,8 +39,7 @@ async fn list_comments(
     Ok(Json(comments))
 }
 
-/// POST /comments/post/:post_id — requires auth (same Supabase user
-/// system as the rest of the site).
+/// POST /comments/post/:post_id
 async fn create_comment(
     State(app_state): State<AppState>,
     user: AuthUser,
@@ -80,9 +80,11 @@ async fn create_comment(
     .fetch_one(&app_state.pool)
     .await?;
 
+    tracing::info!(comment_id = %comment.id, post_id = %post_id, user_id = %user.id, "comment created");
     Ok(Json(comment))
 }
 
+/// Updates the authenticated user's active comment.
 async fn update_comment(
     State(app_state): State<AppState>,
     user: AuthUser,
@@ -103,9 +105,11 @@ async fn update_comment(
     .await?
     .ok_or(RouteError::not_found("comment not found"))?;
 
+    tracing::info!(comment_id = %comment.id, user_id = %user.id, "comment updated");
     Ok(Json(comment))
 }
 
+/// Soft-deletes the authenticated user's comment while preserving its thread.
 async fn delete_comment(
     State(app_state): State<AppState>,
     user: AuthUser,
@@ -123,5 +127,6 @@ async fn delete_comment(
         return Err(RouteError::not_found("comment not found"));
     }
 
+    tracing::info!(comment_id = %id, user_id = %user.id, "comment soft deleted");
     Ok(StatusCode::NO_CONTENT)
 }

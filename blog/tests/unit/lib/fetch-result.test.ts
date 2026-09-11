@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { fetchResult } from './fetch-result.ts';
+import { fetchResult } from '../../../src/lib/fetch-result.ts';
 
 test('returns fetched data when a request succeeds', async () => {
 	const result = await fetchResult(async () => ['post'], 'Could not load posts.');

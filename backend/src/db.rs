@@ -1,11 +1,14 @@
 use sqlx::{postgres::PgPoolOptions, PgPool};
 
+/// Opens the application's PostgreSQL connection pool.
 pub async fn connect() -> anyhow::Result<PgPool> {
+    tracing::info!("connecting to database");
     let url = std::env::var("DATABASE_URL")?;
     let pool = PgPoolOptions::new()
         .max_connections(10)
         .connect(&url)
         .await?;
+    tracing::info!(max_connections = 10, "database connection pool established");
     Ok(pool)
 }
 
@@ -25,20 +28,5 @@ pub fn is_valid_slug(slug: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::is_valid_slug;
-
-    #[test]
-    fn accepts_slugs_with_letters_numbers_and_hyphens() {
-        assert!(is_valid_slug("my-post-2026"));
-        assert!(is_valid_slug("Post42"));
-    }
-
-    #[test]
-    fn rejects_empty_or_invalid_custom_slugs() {
-        assert!(!is_valid_slug(""));
-        assert!(!is_valid_slug("my post"));
-        assert!(!is_valid_slug("my_post"));
-        assert!(!is_valid_slug("my/post"));
-    }
-}
+#[path = "../tests/unit/db.rs"]
+mod tests;

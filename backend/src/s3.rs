@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 const BLOGPOST_MEDIA_PRESIGNED_URL_EXPIRY: Duration = Duration::from_secs(60);
 
-/// S3-related stuff.
+/// Holds the object-storage client and bucket configuration.
 #[derive(Debug, Clone)]
 pub struct S3 {
     pub client: s3::Client,
@@ -19,6 +19,7 @@ pub struct S3 {
 }
 
 impl S3 {
+    /// Builds an object-storage client from the configured R2 credentials.
     pub async fn new(
         s3_account_id: String,
         s3_access_key_id: String,
@@ -28,6 +29,7 @@ impl S3 {
         s3_pix_bucket_name: String,
         s3_pix_bucket_url: String,
     ) -> Self {
+        tracing::info!("initializing object storage client");
         let client = init_s3_client(s3_account_id, s3_access_key_id, s3_access_key_secret).await;
         Self {
             client,
@@ -38,6 +40,7 @@ impl S3 {
         }
     }
 
+    /// Creates upload and public URLs for a pending Pix image.
     pub async fn generate_presigned_pix_upload_url(
         &self,
         image_id: Uuid,
@@ -45,6 +48,7 @@ impl S3 {
     ) -> Result<(String, UploadUrls), anyhow::Error> {
         let extension = image_extension(content_type).ok_or(anyhow!("unsupported content type"))?;
         let key = format!("images/{image_id}.{extension}");
+        tracing::info!(%image_id, %content_type, "creating Pix upload URL");
         let presigning_config = PresigningConfig::expires_in(BLOGPOST_MEDIA_PRESIGNED_URL_EXPIRY)?;
         let upload_url = self
             .client
@@ -64,6 +68,7 @@ impl S3 {
         ))
     }
 
+    /// Checks whether an uploaded Pix object exists in storage.
     pub async fn pix_exists(&self, key: &str) -> Result<bool, anyhow::Error> {
         match self
             .client
@@ -73,18 +78,23 @@ impl S3 {
             .send()
             .await
         {
-            Ok(_) => Ok(true),
+            Ok(_) => {
+                tracing::debug!(%key, "Pix object found in storage");
+                Ok(true)
+            }
             Err(error)
                 if error
                     .as_service_error()
                     .is_some_and(|service| service.is_not_found()) =>
             {
+                tracing::info!(%key, "Pix object not yet present in storage");
                 Ok(false)
             }
             Err(error) => Err(error.into()),
         }
     }
 
+    /// Creates upload and public URLs for a blog-post image.
     pub async fn generate_presigned_blogpost_media_upload_url(
         &self,
         post_id: &str,
@@ -92,6 +102,7 @@ impl S3 {
     ) -> Result<UploadUrls, anyhow::Error> {
         let extension = image_extension(content_type).ok_or(anyhow!("unsupported content type"))?;
         let key = format!("post-images/{}/{}.{}", post_id, Uuid::new_v4(), extension);
+        tracing::info!(%post_id, %content_type, "creating post-media upload URL");
         let presigning_config = PresigningConfig::expires_in(BLOGPOST_MEDIA_PRESIGNED_URL_EXPIRY)?;
         let url = self
             .client
@@ -109,6 +120,7 @@ impl S3 {
     }
 }
 
+/// Contains the direct upload URL and the eventual public asset URL.
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct UploadUrls {
@@ -117,26 +129,10 @@ pub struct UploadUrls {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::UploadUrls;
+#[path = "../tests/unit/s3.rs"]
+mod tests;
 
-    #[test]
-    fn serializes_upload_urls_as_camel_case() {
-        let urls = UploadUrls {
-            upload_url: "https://storage.example.test/upload".to_string(),
-            public_url: "https://images.example.test/image.png".to_string(),
-        };
-
-        assert_eq!(
-            serde_json::to_value(urls).unwrap(),
-            serde_json::json!({
-                "uploadUrl": "https://storage.example.test/upload",
-                "publicUrl": "https://images.example.test/image.png",
-            })
-        );
-    }
-}
-
+/// Initializes an S3-compatible client for Cloudflare R2.
 async fn init_s3_client(
     s3_account_id: String,
     s3_access_key_id: String,
@@ -157,6 +153,7 @@ async fn init_s3_client(
     s3::Client::new(&config)
 }
 
+/// Maps an accepted image MIME type to its filename extension.
 pub fn image_extension(content_type: &str) -> Option<&'static str> {
     match content_type {
         "image/avif" => Some("avif"),

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parsePage } from './pagination.ts';
+import { parsePage } from '../../../src/lib/pagination.ts';
 
 test('uses the first page for absent or invalid page parameters', () => {
 	assert.equal(parsePage(null), 1);

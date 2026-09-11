@@ -13,6 +13,7 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Creates the shared state required by every route.
     pub async fn new(
         pool: Pool<Postgres>,
         s3_account_id: String,
@@ -40,6 +41,7 @@ impl AppState {
         }
     }
 
+    /// Locks the cached JWK set for authentication updates.
     pub async fn jwkset(&self) -> MutexGuard<'_, CachedJwkSet> {
         self.jwkset.lock().await
     }

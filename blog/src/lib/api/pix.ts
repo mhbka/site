@@ -1,6 +1,7 @@
 import type { ApiRequest } from '../models/api.ts';
 import type { Pix, PixPage, PixUpload } from '../models/pix.ts';
 
+/** Creates requests for browsing and uploading pix images. */
 export function createPixApi(request: ApiRequest, upload: typeof globalThis.fetch = globalThis.fetch) {
 	return {
 		getPixStatus: (token: string) => request<{ isPix: boolean }>('/users/is-pix', {}, token),

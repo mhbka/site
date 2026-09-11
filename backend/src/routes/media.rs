@@ -12,10 +12,12 @@ use crate::{
     state::AppState,
 };
 
+/// Builds the blog-post media API routes.
 pub fn router() -> Router<AppState> {
     Router::new().route("/uploads", post(create_upload))
 }
 
+/// Accepts the post and image type for a media upload.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateUploadRequest {
@@ -31,6 +33,7 @@ async fn create_upload(
     Json(request): Json<CreateUploadRequest>,
 ) -> RouteResult<Json<UploadUrls>> {
     if !is_author(&app_state.pool, user.id).await? {
+        tracing::info!(user_id = %user.id, "post-media upload denied for non-author");
         return Err(RouteError::forbidden("author access required"));
     }
     let owns_post = sqlx::query_scalar::<_, bool>(
@@ -41,6 +44,7 @@ async fn create_upload(
         .fetch_one(&app_state.pool)
         .await?;
     if !owns_post {
+        tracing::info!(post_id = %request.post_id, user_id = %user.id, "post-media upload denied for non-owned post");
         return Err(RouteError::not_found("post not found"));
     }
     let urls = app_state
@@ -51,5 +55,6 @@ async fn create_upload(
         )
         .await
         .map_err(|err| RouteError::S3(err.to_string()))?;
+    tracing::info!(post_id = %request.post_id, user_id = %user.id, content_type = %request.content_type, "post-media upload URL created");
     Ok(Json(urls))
 }

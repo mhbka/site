@@ -26,6 +26,7 @@ interface CommentNodeProps {
 	setEditingId: (id?: string) => void;
 }
 
+/** Renders one comment and its nested replies. */
 function CommentNode({
 	comment,
 	childrenByParent,
@@ -43,6 +44,7 @@ function CommentNode({
 	const isDeleted = Boolean(comment.deletedAt);
 	const children = childrenByParent.get(comment.id) ?? [];
 
+	/** Submits a reply to the current comment. */
 	async function submitReply(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = event.currentTarget;
@@ -52,6 +54,7 @@ function CommentNode({
 		form.reset();
 	}
 
+	/** Submits an edit to the current comment. */
 	async function submitEdit(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const body = new FormData(event.currentTarget).get('body')?.toString().trim();
@@ -110,6 +113,7 @@ function CommentNode({
 	);
 }
 
+/** Renders the interactive comment thread for a post. */
 export default function Comments({ postId }: Props) {
 	const [comments, setComments] = useState<Comment[]>([]);
 	const [currentUserId, setCurrentUserId] = useState<string>();
@@ -144,12 +148,14 @@ export default function Comments({ postId }: Props) {
 		})();
 	}, [postId, supabase]);
 
+	/** Retrieves the active session token for comment mutations. */
 	async function accessToken() {
 		const { data: { session } } = await supabase.auth.getSession();
 		if (!session) throw new Error('Please sign in from the header before commenting.');
 		return session.access_token;
 	}
 
+	/** Creates a top-level comment or reply and adds it to the thread. */
 	async function createComment(body: string, parentCommentId: string | null = null) {
 		const comment = await blogApi.createComment(postId, { body, parentCommentId }, await accessToken());
 		setComments((items) => [...items, comment]);
@@ -157,6 +163,7 @@ export default function Comments({ postId }: Props) {
 		setStatus('Comment posted.');
 	}
 
+	/** Updates a comment and replaces it in the local thread. */
 	async function updateComment(id: string, body: string) {
 		const updated = await blogApi.updateComment(id, { body }, await accessToken());
 		setComments((items) => items.map((comment) => comment.id === id ? updated : comment));
@@ -164,6 +171,7 @@ export default function Comments({ postId }: Props) {
 		setStatus('Comment updated.');
 	}
 
+	/** Deletes a comment after confirmation and preserves its replies. */
 	async function deleteComment(id: string) {
 		if (!window.confirm('Delete this comment? Replies will remain visible.')) return;
 		await blogApi.deleteComment(id, await accessToken());
@@ -171,6 +179,7 @@ export default function Comments({ postId }: Props) {
 		setStatus('Comment deleted.');
 	}
 
+	/** Creates a new top-level comment from the form. */
 	async function submitNewComment(event: SubmitEvent<HTMLFormElement>) {
 		event.preventDefault();
 		const form = event.currentTarget;

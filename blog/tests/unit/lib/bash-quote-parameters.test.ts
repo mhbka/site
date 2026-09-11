@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BASH_QUOTE_PARAMETERS_STORAGE_KEY, loadBashQuoteParameters, saveBashQuoteParameters } from './local-storage/bash-quote-parameters.ts';
-import { unrestrictedScoreLimits } from './models/bash-quotes.ts';
+import { BASH_QUOTE_PARAMETERS_STORAGE_KEY, loadBashQuoteParameters, saveBashQuoteParameters } from '../../../src/lib/local-storage/bash-quote-parameters.ts';
+import { unrestrictedScoreLimits } from '../../../src/lib/models/bash-quotes.ts';
 
 function withLocalStorage(run: (storage: Storage) => void) {
 	const entries = new Map<string, string>();

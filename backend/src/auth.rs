@@ -28,6 +28,7 @@ pub struct AuthUser {
     pub id: Uuid,
 }
 
+/// Describes an HTTP rejection produced during authentication.
 pub struct AuthError(pub StatusCode, pub &'static str);
 
 impl axum::response::IntoResponse for AuthError {
@@ -92,6 +93,7 @@ impl FromRequestParts<AppState> for AuthUser {
                 AuthError(StatusCode::UNAUTHORIZED, "Invalid or expired JWT")
             })?;
 
+        tracing::debug!(user_id = %token_data.claims.sub, "authenticated request");
         Ok(AuthUser {
             id: token_data.claims.sub,
         })
@@ -121,6 +123,7 @@ impl FromRequestParts<AppState> for OptionalAuthUser {
 /// If it is, fetch and replace it; return an error if it fails at any point.
 async fn verify_replace_jwk_set(current: &mut CachedJwkSet) -> anyhow::Result<()> {
     if current.outdated() {
+        tracing::info!("refreshing JWT verification keys");
         let jwkset_url = std::env::var("JWKSET_URL")?;
         let new_set = reqwest::get(jwkset_url)
             .await?
@@ -128,6 +131,10 @@ async fn verify_replace_jwk_set(current: &mut CachedJwkSet) -> anyhow::Result<()
             .json::<JwkSet>()
             .await?;
         current.update(new_set);
+        tracing::info!(
+            key_count = current.jwks().keys.len(),
+            "JWT verification keys refreshed"
+        );
     }
 
     Ok(())
@@ -141,6 +148,7 @@ pub struct CachedJwkSet {
 }
 
 impl CachedJwkSet {
+    /// Creates an empty cache that will be refreshed on first use.
     pub fn new() -> Self {
         Self {
             set: JwkSet { keys: vec![] },
@@ -148,15 +156,18 @@ impl CachedJwkSet {
         }
     }
 
+    /// Replaces the cached keys and records when they were fetched.
     pub fn update(&mut self, set: JwkSet) {
         self.set = set;
         self.last_fetched = Utc::now();
     }
 
+    /// Returns the JWT keys currently stored in the cache.
     pub fn jwks(&self) -> &JwkSet {
         &self.set
     }
 
+    /// Reports whether the cache should be refreshed before validation.
     pub fn outdated(&self) -> bool {
         Utc::now() > self.last_fetched + JWK_SET_CACHE_VALIDITY
     }

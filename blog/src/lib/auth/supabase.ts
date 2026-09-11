@@ -1,7 +1,7 @@
 import { createBrowserClient, createServerClient, parseCookieHeader } from "@supabase/ssr"
 import type { AstroCookies } from "astro"
 
-// Server-side client, for APIs etc to use
+/** Creates the server-side Supabase client with Astro cookie support. */
 export const createSupabaseServerClient = (request: Request, cookies: AstroCookies) => {
   return createServerClient(
       import.meta.env.SUPABASE_URL,
@@ -19,7 +19,7 @@ export const createSupabaseServerClient = (request: Request, cookies: AstroCooki
     )
 }
 
-// Browser-side client
+/** Creates the browser-side Supabase client for interactive components. */
 export const createSupabaseBrowserClient = () => {
   return createBrowserClient(
     import.meta.env.SUPABASE_URL,

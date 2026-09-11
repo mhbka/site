@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { uploadPixFiles } from './upload.ts';
+import { uploadPixFiles } from '../../../../src/components/pix/upload.ts';
 
 test('uploads every selected pix with the shared tags and reports progress', async () => {
 	const files = [new File(['one'], 'one.png', { type: 'image/png' }), new File(['two'], 'two.png', { type: 'image/png' })];

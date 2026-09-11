@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { renderMarkdown } from './markdown.ts';
+import { renderMarkdown } from '../../../src/lib/markdown.ts';
 
 test('renders backend Markdown as HTML', async () => {
 	const html = await renderMarkdown('# Hello\n\nA **blog post**.');

@@ -2,6 +2,7 @@ use axum::{extract::State, routing::get, Json, Router};
 
 use crate::{models::tags::TagSummary, routes::error::RouteResult, state::AppState};
 
+/// Builds the public tag-listing API route.
 pub fn router() -> Router<AppState> {
     Router::new().route("/", get(list_tags))
 }

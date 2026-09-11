@@ -20,6 +20,7 @@ use crate::{
 const DEFAULT_PAGE_SIZE: i64 = 60;
 const MAX_PAGE_SIZE: i64 = 100;
 
+/// Builds the Pix gallery API routes.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_images))
@@ -28,6 +29,7 @@ pub fn router() -> Router<AppState> {
         .route("/uploads/{id}/complete", post(complete_upload))
 }
 
+/// Accepts optional filters for a cursor-paginated gallery query.
 #[derive(Debug, Deserialize)]
 struct ListImagesQuery {
     limit: Option<i64>,
@@ -35,6 +37,7 @@ struct ListImagesQuery {
     tag: Option<String>,
 }
 
+/// Returns a page of completed Pix images.
 async fn list_images(
     State(app_state): State<AppState>,
     Query(query): Query<ListImagesQuery>,
@@ -66,6 +69,7 @@ async fn list_images(
     }))
 }
 
+/// Accepts metadata for a new Pix upload.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateUploadRequest {
@@ -73,6 +77,7 @@ struct CreateUploadRequest {
     tags: Vec<String>,
 }
 
+/// Returns the pending image ID and its upload URLs.
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct CreateUploadResponse {
@@ -81,12 +86,14 @@ struct CreateUploadResponse {
     public_url: String,
 }
 
+/// Creates a pending Pix record and its direct upload URL.
 async fn create_upload(
     State(app_state): State<AppState>,
     user: AuthUser,
     Json(request): Json<CreateUploadRequest>,
 ) -> RouteResult<Json<CreateUploadResponse>> {
     if !is_pix(&app_state.pool, user.id).await? {
+        tracing::info!(user_id = %user.id, "Pix upload denied for user without access");
         return Err(RouteError::forbidden("pix access required"));
     }
     if image_extension(&request.content_type).is_none() {
@@ -115,10 +122,11 @@ async fn create_upload(
     .bind(user.id)
     .bind(bucket_path)
     .bind(&public_url)
-    .bind(request.content_type)
-    .bind(request.tags)
+    .bind(&request.content_type)
+    .bind(&request.tags)
     .execute(&app_state.pool)
     .await?;
+    tracing::info!(image_id = %image_id, user_id = %user.id, content_type = %request.content_type, "Pix upload created");
     Ok(Json(CreateUploadResponse {
         image_id,
         upload_url,
@@ -126,12 +134,14 @@ async fn create_upload(
     }))
 }
 
+/// Marks a verified object-storage upload as complete.
 async fn complete_upload(
     State(app_state): State<AppState>,
     user: AuthUser,
     Path(id): Path<Uuid>,
 ) -> RouteResult<Json<Pix>> {
     if !is_pix(&app_state.pool, user.id).await? {
+        tracing::info!(user_id = %user.id, "Pix completion denied for user without access");
         return Err(RouteError::forbidden("pix access required"));
     }
     let image = sqlx::query_as::<_, PendingImage>(
@@ -148,6 +158,7 @@ async fn complete_upload(
         .await
         .map_err(|error| RouteError::S3(error.to_string()))?
     {
+        tracing::info!(image_id = %image.id, user_id = %user.id, "Pix completion attempted before storage upload finished");
         return Err(RouteError::bad_request("image upload is incomplete"));
     }
     let image = sqlx::query_as::<_, Pix>(
@@ -157,9 +168,11 @@ async fn complete_upload(
     .bind(image.id)
     .fetch_one(&app_state.pool)
     .await?;
+    tracing::info!(image_id = %image.id, user_id = %user.id, "Pix upload completed");
     Ok(Json(image))
 }
 
+/// Returns the tags used by completed Pix images.
 async fn list_tags(
     State(app_state): State<AppState>,
 ) -> RouteResult<Json<Vec<crate::models::tags::TagSummary>>> {
@@ -168,6 +181,7 @@ async fn list_tags(
     ).fetch_all(&app_state.pool).await?))
 }
 
+/// Holds the stored object key for a pending Pix image.
 #[derive(sqlx::FromRow)]
 struct PendingImage {
     id: Uuid,
@@ -175,61 +189,5 @@ struct PendingImage {
 }
 
 #[cfg(test)]
-mod tests {
-    use axum::{
-        body::Body,
-        http::{Request, StatusCode},
-        routing::post,
-        Router,
-    };
-    use tower::ServiceExt;
-    use uuid::Uuid;
-
-    use crate::models::pix::PixPage;
-
-    use super::CreateUploadResponse;
-
-    #[test]
-    fn serializes_upload_response_as_camel_case() {
-        let response = CreateUploadResponse {
-            image_id: Uuid::nil(),
-            upload_url: "upload".into(),
-            public_url: "public".into(),
-        };
-        assert_eq!(
-            serde_json::to_value(response).unwrap(),
-            serde_json::json!({ "imageId": Uuid::nil(), "uploadUrl": "upload", "publicUrl": "public" })
-        );
-    }
-
-    #[test]
-    fn serializes_pix_page_pagination_state_as_camel_case() {
-        let page = PixPage {
-            images: vec![],
-            next_before: None,
-            has_more: false,
-        };
-        assert_eq!(
-            serde_json::to_value(page).unwrap(),
-            serde_json::json!({ "images": [], "nextBefore": null, "hasMore": false })
-        );
-    }
-
-    #[tokio::test]
-    async fn complete_upload_route_matches_a_uuid_path() {
-        let router = Router::new().route(
-            "/uploads/{id}/complete",
-            post(|| async { StatusCode::NO_CONTENT }),
-        );
-        let response = router
-            .oneshot(
-                Request::post("/uploads/f2c6e5e4-29ef-4dce-896e-3ea8a2e9507d/complete")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::NO_CONTENT);
-    }
-}
+#[path = "../../tests/unit/routes/pix.rs"]
+mod tests;

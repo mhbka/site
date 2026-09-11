@@ -1,5 +1,7 @@
+/** Identifies whether a post is private or publicly available. */
 export type PostStatus = 'draft' | 'published';
 
+/** Represents the fields shown for a published post listing. */
 export interface PostSummary {
 	id: string;
 	title: string;
@@ -9,6 +11,7 @@ export interface PostSummary {
 	publishedAt: string;
 }
 
+/** Represents the fields shown for a draft post listing. */
 export interface DraftPostSummary {
 	id: string;
 	title: string;
@@ -18,6 +21,7 @@ export interface DraftPostSummary {
 	updatedAt: string;
 }
 
+/** Represents the full editable post returned by the backend. */
 export interface Post extends Omit<PostSummary, 'publishedAt'> {
 	authorId: string;
 	contentMd: string;
@@ -28,6 +32,7 @@ export interface Post extends Omit<PostSummary, 'publishedAt'> {
 	updatedAt: string;
 }
 
+/** Supplies fields for creating a post. */
 export interface CreatePostInput {
 	title: string;
 	contentMd: string;
@@ -35,6 +40,7 @@ export interface CreatePostInput {
 	tags?: string[];
 }
 
+/** Supplies the mutable fields for a post update. */
 export interface UpdatePostInput {
 	title?: string;
 	contentMd?: string;

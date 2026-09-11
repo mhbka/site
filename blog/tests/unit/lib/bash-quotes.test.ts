@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { BashQuoteStore, matchesScoreLimits, unrestrictedScoreLimits, type BashQuote } from './bash-quotes.ts';
+import { BashQuoteStore, matchesScoreLimits, unrestrictedScoreLimits, type BashQuote } from '../../../src/lib/bash-quotes.ts';
 
 const quote: BashQuote = {
 	qid: '#1', score: 1, quote: 'hello', toxicity: 0.2, severe_toxicity: 0.1,

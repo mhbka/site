@@ -1,7 +1,9 @@
 import { SCORE_NAMES, unrestrictedScoreLimits, type ScoreLimits } from '../models/bash-quotes.ts';
 
+/** Names the browser storage entry used by the bash quote picker. */
 export const BASH_QUOTE_PARAMETERS_STORAGE_KEY = 'bash-quote-picker:parameters:v1';
 
+/** Checks that a stored score range is complete and valid. */
 function isScoreLimit(value: unknown): value is { lower: number; upper: number } {
 	if (!value || typeof value !== 'object') return false;
 	const { lower, upper } = value as { lower?: unknown; upper?: unknown };
@@ -14,6 +16,7 @@ function isScoreLimit(value: unknown): value is { lower: number; upper: number }
 		&& lower <= upper;
 }
 
+/** Provides the picker defaults for first-time visitors. */
 function defaultParameters(): ScoreLimits {
 	const defaults = unrestrictedScoreLimits();
 	defaults.toxicity = { lower: 0, upper: 0.2 };
@@ -21,6 +24,7 @@ function defaultParameters(): ScoreLimits {
 	return defaults;
 }
 
+/** Merges valid stored score ranges into the default parameters. */
 function normaliseParameters(value: unknown): ScoreLimits {
 	const defaults = defaultParameters();
 	if (!value || typeof value !== 'object') return defaults;
@@ -32,6 +36,7 @@ function normaliseParameters(value: unknown): ScoreLimits {
 	return defaults;
 }
 
+/** Loads saved picker parameters or persists the initial defaults. */
 export function loadBashQuoteParameters(): ScoreLimits {
 	try {
 		const stored = localStorage.getItem(BASH_QUOTE_PARAMETERS_STORAGE_KEY);
@@ -46,6 +51,7 @@ export function loadBashQuoteParameters(): ScoreLimits {
 	}
 }
 
+/** Persists validated picker parameters when browser storage is available. */
 export function saveBashQuoteParameters(parameters: ScoreLimits) {
 	try {
 		localStorage.setItem(BASH_QUOTE_PARAMETERS_STORAGE_KEY, JSON.stringify(normaliseParameters(parameters)));

@@ -3,6 +3,7 @@ export interface ImageUploadRequestResponse {
 	publicUrl: string;
 }
 
+/** Uploads a post image through a backend-issued presigned URL. */
 export async function uploadImage(
 	file: File,
 	mediaApiUrl: string,
@@ -41,6 +42,7 @@ export async function uploadImage(
 	return upload.publicUrl;
 }
 
+/** Validates the upload details returned by the media endpoint. */
 function isImageUploadRequestResponse(data: unknown): data is ImageUploadRequestResponse {
 	return typeof data === 'object'
 		&& data !== null

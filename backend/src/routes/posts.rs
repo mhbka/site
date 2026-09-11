@@ -16,6 +16,7 @@ use crate::{
     state::AppState,
 };
 
+/// Builds the post API routes.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_posts).post(create_post))
@@ -29,10 +30,12 @@ pub fn router() -> Router<AppState> {
         .route("/id/{id}/draft", post(move_post_to_draft))
 }
 
+/// Verifies that the authenticated user is allowed to manage posts.
 async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {
     if crate::routes::users::is_author(pool, user_id).await? {
         Ok(())
     } else {
+        tracing::info!(%user_id, "author access denied");
         Err(RouteError::forbidden("author access required"))
     }
 }
@@ -41,6 +44,7 @@ async fn require_author(pool: &PgPool, user_id: Uuid) -> RouteResult<()> {
 const DEFAULT_PAGE_SIZE: u32 = 50;
 const MAX_PAGE_SIZE: u32 = 100;
 
+/// Accepts optional pagination and tag-filter values for post listings.
 #[derive(Debug, Deserialize)]
 struct ListPostsQuery {
     page: Option<u32>,
@@ -49,6 +53,7 @@ struct ListPostsQuery {
 }
 
 impl ListPostsQuery {
+    /// Converts validated pagination values into a SQL limit and offset.
     fn pagination(self) -> Result<(i64, i64), RouteError> {
         let page = self.page.unwrap_or(1);
         let size = self.size.unwrap_or(DEFAULT_PAGE_SIZE);
@@ -64,6 +69,7 @@ impl ListPostsQuery {
         Ok((i64::from(size), offset as i64))
     }
 
+    /// Normalizes a non-empty tag filter for the database query.
     fn tag(&self) -> Option<String> {
         self.tag
             .as_ref()
@@ -72,6 +78,7 @@ impl ListPostsQuery {
     }
 }
 
+/// Lists published posts using the requested pagination and tag filter.
 async fn list_posts(
     State(app_state): State<AppState>,
     OptionalAuthUser(_user): OptionalAuthUser,
@@ -121,81 +128,8 @@ async fn list_drafts(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{normalize_tags, ListPostsQuery, DEFAULT_PAGE_SIZE};
-
-    #[test]
-    fn uses_default_pagination_values() {
-        assert_eq!(
-            ListPostsQuery {
-                page: None,
-                size: None,
-                tag: None,
-            }
-            .pagination()
-            .unwrap(),
-            (i64::from(DEFAULT_PAGE_SIZE), 0)
-        );
-    }
-
-    #[test]
-    fn calculates_offset_for_requested_page() {
-        assert_eq!(
-            ListPostsQuery {
-                page: Some(3),
-                size: Some(20),
-                tag: None,
-            }
-            .pagination()
-            .unwrap(),
-            (20, 40)
-        );
-    }
-
-    #[test]
-    fn rejects_invalid_pagination_values() {
-        assert!(ListPostsQuery {
-            page: Some(0),
-            size: Some(20),
-            tag: None,
-        }
-        .pagination()
-        .is_err());
-        assert!(ListPostsQuery {
-            page: Some(1),
-            size: Some(101),
-            tag: None,
-        }
-        .pagination()
-        .is_err());
-    }
-
-    #[test]
-    fn normalizes_and_deduplicates_tags() {
-        assert_eq!(
-            normalize_tags(vec![
-                "Astro".to_string(),
-                "Java Script".to_string(),
-                "astro".to_string(),
-                " ".to_string(),
-            ]),
-            vec!["astro", "javascript"],
-        );
-    }
-
-    #[test]
-    fn normalizes_the_tag_filter() {
-        assert_eq!(
-            ListPostsQuery {
-                page: None,
-                size: None,
-                tag: Some("Java Script".to_string())
-            }
-            .tag(),
-            Some("javascript".to_string())
-        );
-    }
-}
+#[path = "../../tests/unit/routes/posts.rs"]
+mod tests;
 
 /// GET /:slug — public read of a single published post.
 async fn get_post_by_slug(
@@ -272,6 +206,7 @@ async fn create_post(
     .execute(&app_state.pool)
     .await?;
 
+    tracing::info!(post_id = %post.id, user_id = %user.id, slug = %post.slug, "post draft created");
     Ok(Json(post))
 }
 
@@ -331,9 +266,11 @@ async fn update_post(
     .execute(&app_state.pool)
     .await?;
 
+    tracing::info!(post_id = %post.id, user_id = %user.id, slug = %post.slug, "post updated");
     Ok(Json(post))
 }
 
+/// Uses a requested valid slug or derives one from the title.
 fn requested_slug(slug: Option<String>, title: &str) -> Result<String, RouteError> {
     match slug {
         Some(slug) if !slug.is_empty() && !db::is_valid_slug(&slug) => Err(
@@ -344,6 +281,7 @@ fn requested_slug(slug: Option<String>, title: &str) -> Result<String, RouteErro
     }
 }
 
+/// Normalizes tags and removes duplicates while preserving their order.
 fn normalize_tags(tags: Vec<String>) -> Vec<String> {
     let mut normalized = Vec::new();
 
@@ -357,6 +295,7 @@ fn normalize_tags(tags: Vec<String>) -> Vec<String> {
     normalized
 }
 
+/// Converts a tag to its compact lowercase representation.
 fn normalize_tag(tag: &str) -> String {
     tag.to_lowercase().split_whitespace().collect()
 }
@@ -383,6 +322,7 @@ async fn publish_post(
     .await?
     .ok_or(RouteError::not_found("post not found"))?;
 
+    tracing::info!(post_id = %post.id, user_id = %user.id, "post published");
     Ok(Json(post))
 }
 
@@ -408,6 +348,7 @@ async fn move_post_to_draft(
     .await?
     .ok_or(RouteError::not_found("post not found"))?;
 
+    tracing::info!(post_id = %post.id, user_id = %user.id, "post moved to draft");
     Ok(Json(post))
 }
 
@@ -425,5 +366,6 @@ async fn delete_post(
         .execute(&app_state.pool)
         .await?;
 
+    tracing::info!(post_id = %id, user_id = %user.id, "post soft deleted");
     Ok(StatusCode::NO_CONTENT)
 }

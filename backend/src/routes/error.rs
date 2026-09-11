@@ -4,8 +4,10 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
+/// Standard result type returned by API handlers.
 pub type RouteResult<T> = Result<T, RouteError>;
 
+/// Represents a client-safe error produced by a route handler.
 #[derive(Debug)]
 pub enum RouteError {
     BadRequest(&'static str),
@@ -16,14 +18,17 @@ pub enum RouteError {
 }
 
 impl RouteError {
+    /// Creates a bad-request response error.
     pub const fn bad_request(message: &'static str) -> Self {
         Self::BadRequest(message)
     }
 
+    /// Creates a not-found response error.
     pub const fn not_found(message: &'static str) -> Self {
         Self::NotFound(message)
     }
 
+    /// Creates a forbidden response error.
     pub const fn forbidden(message: &'static str) -> Self {
         Self::Forbidden(message)
     }
@@ -44,15 +49,24 @@ impl From<sqlx::Error> for RouteError {
 impl IntoResponse for RouteError {
     fn into_response(self) -> Response {
         match self {
-            Self::BadRequest(message) => (StatusCode::BAD_REQUEST, message).into_response(),
-            Self::Forbidden(message) => (StatusCode::FORBIDDEN, message).into_response(),
-            Self::NotFound(message) => (StatusCode::NOT_FOUND, message).into_response(),
+            Self::BadRequest(message) => {
+                tracing::info!(%message, "request rejected");
+                (StatusCode::BAD_REQUEST, message).into_response()
+            }
+            Self::Forbidden(message) => {
+                tracing::info!(%message, "request forbidden");
+                (StatusCode::FORBIDDEN, message).into_response()
+            }
+            Self::NotFound(message) => {
+                tracing::info!(%message, "requested resource was not found");
+                (StatusCode::NOT_FOUND, message).into_response()
+            }
             Self::Database(error) => {
                 tracing::error!(%error, "database error");
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
             }
             Self::S3(error) => {
-                tracing::warn!("Error from S3: {error}");
+                tracing::error!(%error, "object storage error");
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
             }
         }
@@ -60,38 +74,5 @@ impl IntoResponse for RouteError {
 }
 
 #[cfg(test)]
-mod tests {
-    use axum::{http::StatusCode, response::IntoResponse};
-
-    use super::RouteError;
-
-    #[test]
-    fn client_errors_keep_their_status_codes() {
-        assert_eq!(
-            RouteError::bad_request("invalid input")
-                .into_response()
-                .status(),
-            StatusCode::BAD_REQUEST
-        );
-        assert_eq!(
-            RouteError::forbidden("not an author")
-                .into_response()
-                .status(),
-            StatusCode::FORBIDDEN
-        );
-        assert_eq!(
-            RouteError::not_found("missing").into_response().status(),
-            StatusCode::NOT_FOUND
-        );
-    }
-
-    #[test]
-    fn database_errors_become_internal_server_errors() {
-        assert_eq!(
-            RouteError::from(sqlx::Error::RowNotFound)
-                .into_response()
-                .status(),
-            StatusCode::INTERNAL_SERVER_ERROR
-        );
-    }
-}
+#[path = "../../tests/unit/routes/error.rs"]
+mod tests;

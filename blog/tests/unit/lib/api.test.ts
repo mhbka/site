@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { ApiError, createBlogApi } from './api.ts';
+import { ApiError, createBlogApi } from '../../../src/lib/api.ts';
 
 function createFetch(response: Response) {
 	const calls: Array<[string, RequestInit | undefined]> = [];

@@ -3,6 +3,7 @@ import { uploadPixFiles } from './upload.ts';
 
 type PixImage = Pick<Pix, 'publicUrl' | 'tags' | 'createdAt'>;
 
+/** Wires gallery browsing, modal viewing, and authenticated uploads. */
 export function initPixGallery(gallery: HTMLElement) {
 	const grid = gallery.querySelector<HTMLElement>('[data-moe-grid]');
 	const loadMore = gallery.querySelector<HTMLButtonElement>('[data-moe-load-more]');
@@ -16,6 +17,7 @@ export function initPixGallery(gallery: HTMLElement) {
 	const fileInput = gallery.querySelector<HTMLInputElement>('#moe-image');
 	const tagsInput = gallery.querySelector<HTMLInputElement>('[data-tag-value]');
 
+	/** Creates a gallery button for an image thumbnail. */
 	function createThumbnail(pix: PixImage) {
 		const button = document.createElement('button');
 		button.className = 'ui-button moe-thumbnail';
@@ -32,6 +34,7 @@ export function initPixGallery(gallery: HTMLElement) {
 		return button;
 	}
 
+	/** Populates the image viewer with the selected image details. */
 	function showImage(image: PixImage) {
 		if (!portalImage) return;
 		portalImage.src = image.publicUrl;
@@ -69,6 +72,7 @@ export function initPixGallery(gallery: HTMLElement) {
 		finally { loadMore.disabled = false; }
 	});
 
+	/** Uploads a selected batch using the gallery's current tags. */
 	async function uploadFiles(files: Iterable<File>) {
 		if (!grid) return;
 		const selectedFiles = [...files];

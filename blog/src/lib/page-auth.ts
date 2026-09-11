@@ -8,6 +8,7 @@ interface Options {
 	includePix?: boolean;
 }
 
+/** Loads the signed-in user's session and optional application access flags. */
 export async function getPageAuth(request: Request, cookies: AstroCookies, { includeAuthor = false, includePix = false }: Options = {}) {
 	const supabaseClient = createSupabaseServerClient(request, cookies);
 	const { data: { session } } = await supabaseClient.auth.getSession();

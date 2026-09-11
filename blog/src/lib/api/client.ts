@@ -1,5 +1,6 @@
 import type { ApiRequest, BlogApiOptions } from '../models/api.ts';
 
+/** Describes a non-successful response from the backend API. */
 export class ApiError extends Error {
 	public readonly status: number;
 	public readonly body: unknown;
@@ -13,8 +14,10 @@ export class ApiError extends Error {
 }
 
 const environment = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env;
+/** Defines the backend URL used when an explicit API URL is absent. */
 export const DEFAULT_API_BASE_URL = environment?.BACKEND_URL ?? 'http://localhost:8080';
 
+/** Creates a request helper that applies API URLs and authentication. */
 export function createApiClient({
 	baseUrl = DEFAULT_API_BASE_URL,
 	fetch: fetcher = globalThis.fetch,

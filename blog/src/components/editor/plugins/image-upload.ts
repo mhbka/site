@@ -4,6 +4,7 @@ import { Decoration } from '@milkdown/kit/prose/view';
 
 type UploadImageFile = (file: File) => Promise<string>;
 
+/** Adds drag-and-drop image uploads to the Milkdown editor. */
 export function imageUploadPlugin(uploadImageFile: UploadImageFile): MilkdownPlugin {
 	return (ctx) => {
 		ctx.set(uploadConfig.key, {
@@ -34,3 +35,4 @@ export function imageUploadPlugin(uploadImageFile: UploadImageFile): MilkdownPlu
 		return () => {};
 	};
 }
+/** Adds drag-and-drop image uploads to the Milkdown editor. */

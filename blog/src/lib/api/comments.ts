@@ -1,6 +1,7 @@
 import type { ApiRequest } from '../models/api.ts';
 import type { Comment, CreateCommentInput, UpdateCommentInput } from '../models/comments.ts';
 
+/** Creates requests for reading and managing post comments. */
 export function createCommentsApi(request: ApiRequest) {
 	return {
 		listComments: (postId: string) =>

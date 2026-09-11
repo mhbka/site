@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { uploadImage } from './image-upload.ts';
+import { uploadImage } from '../../../src/lib/image-upload.ts';
 
 test('requests a presigned URL, uploads the file, and returns the public URL', async () => {
 	const requests: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];

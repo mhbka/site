@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { addTag, normalizeTag } from './tags.ts';
+import { addTag, normalizeTag } from '../../../src/lib/tags.ts';
 
 test('normalizes tags to lowercase without spacing', () => {
 	assert.equal(normalizeTag('Java Script'), 'javascript');

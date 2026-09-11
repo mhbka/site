@@ -7,13 +7,25 @@ mod state;
 
 use axum::Router;
 use tower_http::cors::{Any, CorsLayer};
+use tower_http::trace::{DefaultMakeSpan, DefaultOnResponse, TraceLayer};
+use tracing::Level;
+use tracing_subscriber::EnvFilter;
 
 use crate::state::AppState;
 
 #[tokio::main]
+/// Starts the HTTP server with its shared state and middleware.
 async fn main() -> anyhow::Result<()> {
     dotenvy::dotenv().ok();
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .json()
+        .with_current_span(false)
+        .with_span_list(false)
+        .with_env_filter(
+            EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| EnvFilter::new("info,tower_http=info")),
+        )
+        .init();
 
     let s3_account_id = std::env::var("S3_ACCOUNT_ID").expect("S3_ACCOUNT_ID is in env");
     let s3_access_key_id = std::env::var("S3_ACCESS_KEY_ID").expect("S3_ACCESS_KEY_ID is in env");
@@ -55,15 +67,20 @@ async fn main() -> anyhow::Result<()> {
         .nest("/pix", routes::pix::router())
         .with_state(app_state)
         .layer(cors)
-        .layer(tower_http::trace::TraceLayer::new_for_http());
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(DefaultMakeSpan::new().level(Level::INFO))
+                .on_response(DefaultOnResponse::new().level(Level::INFO)),
+        );
 
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8080);
 
-    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
-    tracing::info!("listening on :{port}");
+    let address = format!("0.0.0.0:{port}");
+    let listener = tokio::net::TcpListener::bind(&address).await?;
+    tracing::info!(%address, "backend started");
     axum::serve(listener, app).await?;
 
     Ok(())

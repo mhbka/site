@@ -1,6 +1,7 @@
 import type { ApiRequest } from '../models/api.ts';
 import type { CreatePostInput, DraftPostSummary, Post, PostSummary, UpdatePostInput } from '../models/posts.ts';
 
+/** Creates requests for reading and managing blog posts. */
 export function createPostsApi(request: ApiRequest) {
 	return {
 		getAuthorStatus: (token: string) => request<{ isAuthor: boolean }>('/users/is-author', {}, token),

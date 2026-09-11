@@ -7,12 +7,14 @@ use crate::auth::AuthUser;
 use crate::routes::error::RouteResult;
 use crate::state::AppState;
 
+/// Builds the authenticated-user status API routes.
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/is-author", get(is_author_status))
         .route("/is-pix", get(is_pix_status))
 }
 
+/// Checks whether a user has Pix gallery access.
 pub async fn is_pix(pool: &PgPool, user_id: Uuid) -> Result<bool, sqlx::Error> {
     sqlx::query_scalar::<_, bool>(
         "select exists(select 1 from profiles where user_id = $1 and is_pix)",
@@ -22,6 +24,7 @@ pub async fn is_pix(pool: &PgPool, user_id: Uuid) -> Result<bool, sqlx::Error> {
     .await
 }
 
+/// Checks whether a user has blog-author access.
 pub async fn is_author(pool: &PgPool, user_id: Uuid) -> Result<bool, sqlx::Error> {
     sqlx::query_scalar::<_, bool>(
         "select exists(select 1 from profiles where user_id = $1 and is_author)",
@@ -31,12 +34,14 @@ pub async fn is_author(pool: &PgPool, user_id: Uuid) -> Result<bool, sqlx::Error
     .await
 }
 
+/// Returns the authenticated user's author permission.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct AuthorStatus {
     is_author: bool,
 }
 
+/// Returns the authenticated user's Pix permission.
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 struct PixStatus {
@@ -48,36 +53,21 @@ async fn is_author_status(
     State(app_state): State<AppState>,
     user: AuthUser,
 ) -> RouteResult<Json<AuthorStatus>> {
-    tracing::info!("USER: {}", user.id);
-    Ok(Json(AuthorStatus {
-        is_author: is_author(&app_state.pool, user.id).await?,
-    }))
+    let is_author = is_author(&app_state.pool, user.id).await?;
+    tracing::info!(user_id = %user.id, is_author, "author permission checked");
+    Ok(Json(AuthorStatus { is_author }))
 }
 
+/// Returns whether the authenticated user can upload to Pix.
 async fn is_pix_status(
     State(app_state): State<AppState>,
     user: AuthUser,
 ) -> RouteResult<Json<PixStatus>> {
-    Ok(Json(PixStatus {
-        is_pix: is_pix(&app_state.pool, user.id).await?,
-    }))
+    let is_pix = is_pix(&app_state.pool, user.id).await?;
+    tracing::info!(user_id = %user.id, is_pix, "Pix permission checked");
+    Ok(Json(PixStatus { is_pix }))
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{AuthorStatus, PixStatus};
-
-    #[test]
-    fn serializes_author_status_as_camel_case() {
-        let status = serde_json::to_value(AuthorStatus { is_author: true }).unwrap();
-
-        assert_eq!(status, serde_json::json!({ "isAuthor": true }));
-    }
-
-    #[test]
-    fn serializes_pix_status_as_camel_case() {
-        let status = serde_json::to_value(PixStatus { is_pix: true }).unwrap();
-
-        assert_eq!(status, serde_json::json!({ "isPix": true }));
-    }
-}
+#[path = "../../tests/unit/routes/users.rs"]
+mod tests;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Schema } from '@milkdown/kit/prose/model';
 import { TextSelection } from '@milkdown/kit/prose/state';
-import { findImageBeforeCursor } from './image-selection.ts';
+import { findImageBeforeCursor } from '../../../../../src/components/editor/plugins/image-selection.ts';
 
 const schema = new Schema({
 	nodes: {

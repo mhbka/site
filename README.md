@@ -1,4 +1,4 @@
 # my
 ## personal
 ### website!
-@ [kyunkyun.moe](https://kyunkyun.moe).
+@ [kyunkyun.moe](https://kyunkyun.moe)

@@ -13,7 +13,7 @@ interface UploadPixFilesOptions {
 	onProgress: (progress: PixUploadProgress) => void;
 }
 
-// Uploads each selected file and reports the batch outcome.
+/** Uploads each selected file and reports the batch outcome. */
 export async function uploadPixFiles({ files, tags, upload, onProgress }: UploadPixFilesOptions): Promise<PixUploadProgress> {
 	const queuedFiles = [...files];
 	const progress: PixUploadProgress = { uploaded: 0, total: queuedFiles.length, failed: 0 };

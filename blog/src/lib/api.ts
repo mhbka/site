@@ -12,6 +12,7 @@ export type { CreatePostInput, DraftPostSummary, Post, PostStatus, PostSummary, 
 export type { TagSummary } from './models/tags.ts';
 export type { Pix, PixPage, PixUpload } from './models/pix.ts';
 
+/** Combines each backend resource client into the application API. */
 export function createBlogApi(options: BlogApiOptions = {}) {
 	const request = createApiClient(options);
 	return {
@@ -22,4 +23,5 @@ export function createBlogApi(options: BlogApiOptions = {}) {
 	};
 }
 
+/** Provides the application's default backend API client. */
 export const blogApi = createBlogApi({ baseUrl: DEFAULT_API_BASE_URL });
