@@ -66,7 +66,7 @@ const { images, nextBefore, hasMore, tag, isPix, accessToken } = Astro.props;
 	.moe-load-more[hidden] { display: none; }
 	.moe-thumbnail { display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; background: var(--color-subtle); }
 	.moe-thumbnail img { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
-	.moe-portal { position: relative; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); padding: 0; border: 0; background: transparent; box-shadow: none; overflow: hidden; }
+	.moe-portal { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%); max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); padding: 0; border: 0; background: transparent; box-shadow: none; overflow: hidden; }
 	.moe-portal::backdrop { background: var(--color-overlay); }
 	.moe-portal img { display: block; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); object-fit: contain; }
 	.moe-portal__details { position: absolute; z-index: 1; top: 0.5rem; right: 0.5rem; display: grid; justify-items: end; gap: 0.35rem; max-width: calc(100% - 1rem); padding: 0.5rem; border-radius: var(--radius-control); background: rgb(74 54 39 / 80%); color: var(--color-heading); }

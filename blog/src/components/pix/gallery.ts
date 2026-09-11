@@ -1,4 +1,5 @@
 import { blogApi, type Pix } from '../../lib/api.ts';
+import { restoreScrollPosition, type ScrollPosition } from './scroll.ts';
 import { uploadPixFiles } from './upload.ts';
 
 type PixImage = Pick<Pix, 'publicUrl' | 'tags' | 'createdAt'>;
@@ -16,6 +17,13 @@ export function initPixGallery(gallery: HTMLElement) {
 	const dropzone = gallery.querySelector<HTMLLabelElement>('[data-moe-dropzone]');
 	const fileInput = gallery.querySelector<HTMLInputElement>('#moe-image');
 	const tagsInput = gallery.querySelector<HTMLInputElement>('[data-tag-value]');
+	let viewerScrollPosition: ScrollPosition | undefined;
+
+	/** Returns the viewport to the position it had before the viewer opened. */
+	function restoreViewerScrollPosition() {
+		if (!viewerScrollPosition) return;
+		restoreScrollPosition(viewerScrollPosition, (left, top) => window.scrollTo(left, top));
+	}
 
 	/** Creates a gallery button for an image thumbnail. */
 	function createThumbnail(pix: PixImage) {
@@ -54,10 +62,16 @@ export function initPixGallery(gallery: HTMLElement) {
 			tags: JSON.parse(thumbnail.dataset.imageTags ?? '[]') as string[],
 			createdAt: thumbnail.dataset.imageCreatedAt ?? '',
 		});
+		viewerScrollPosition = { left: window.scrollX, top: window.scrollY };
 		portal.showModal();
+		requestAnimationFrame(restoreViewerScrollPosition);
 	});
 	gallery.querySelector('[data-moe-close]')?.addEventListener('click', () => portal?.close());
 	portal?.addEventListener('click', (event) => { if (event.target === portal) portal.close(); });
+	portal?.addEventListener('close', () => {
+		restoreViewerScrollPosition();
+		viewerScrollPosition = undefined;
+	});
 
 	loadMore?.addEventListener('click', async () => {
 		if (!grid || gallery.dataset.hasMore !== 'true' || !gallery.dataset.nextBefore) return;

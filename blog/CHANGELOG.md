@@ -1,4 +1,4 @@
-# changelog
+# (functional) changelog
 
 ## 2026-09-11
 ```
