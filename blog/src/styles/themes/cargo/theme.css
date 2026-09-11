@@ -2,14 +2,14 @@
 
 :root,
 :root[data-theme='cargo'] {
-	--font-body: var(--font-atkinson);
+	--font-body: var(--font-ibm-plex-sans);
 	--color-accent: #adba71;
 	--color-text: #b7c481;
 	--color-heading: #cbd69a;
 	--color-muted: #899654;
 	--color-subtle: #5c4932;
-	--color-page-background: #21160f;
-	--color-surface: #4a3627;
+	--color-page-background: #18100b;
+	--color-surface: #38291e;
 	--color-danger: #ce745c;
 	--color-overlay: rgb(17 11 8 / 70%);
 	--color-transparent: transparent;

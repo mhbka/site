@@ -8,7 +8,7 @@ img { max-width: 100%; height: auto; border-radius: var(--radius-media); }
 hr { border: none; border-top: var(--border-width) solid var(--color-subtle); }
 
 .page-title { margin: 0 0 0.5rem; }
-.title-wave { white-space: pre-wrap; }
+.title-wave { white-space: pre-wrap; cursor: default; user-select: none; }
 .title-wave-letter { display: inline-block; animation: title-letter-wave 3.5s ease-in-out infinite; animation-delay: calc(var(--letter-index) * 120ms); will-change: transform; }
 @keyframes title-letter-wave { 0%, 100% { transform: translateY(var(--hover-offset, 0px)); } 50% { transform: translateY(calc(var(--hover-offset, 0px) - 0.16em)); } }
 @media (prefers-reduced-motion: reduce) { .title-wave-letter { animation: none; } }

@@ -24,7 +24,7 @@ function loadBuildEnv() {
 
 // https://astro.build/config
 export default defineConfig({
-    site: 'https://example.com',
+    site: 'https://kyunkyun.moe',
 	integrations: [mdx(), react(), sitemap()],
 	output: 'server',
 	// The Supabase URL and publishable key are deliberately available to browser scripts.
@@ -41,28 +41,18 @@ export default defineConfig({
 	},
 
 	fonts: [
-      {
-          provider: fontProviders.local(),
-          name: 'Atkinson',
-          cssVariable: '--font-atkinson',
-          fallbacks: ['sans-serif'],
-          options: {
-              variants: [
-                  {
-                      src: ['./src/assets/fonts/atkinson-regular.woff'],
-                      weight: 400,
-                      style: 'normal',
-                      display: 'swap',
-                  },
-                  {
-                      src: ['./src/assets/fonts/atkinson-bold.woff'],
-                      weight: 700,
-                      style: 'normal',
-                      display: 'swap',
-                  },
-              ],
-          },
-      },
+		{
+			provider: fontProviders.local(),
+			name: 'IBM Plex Sans',
+			cssVariable: '--font-ibm-plex-sans',
+			fallbacks: ['sans-serif'],
+			options: {
+				variants: [
+					{ src: ['./src/assets/fonts/ibm-plex-sans-regular.woff2'], weight: 400, style: 'normal', display: 'swap' },
+					{ src: ['./src/assets/fonts/ibm-plex-sans-bold.woff2'], weight: 700, style: 'normal', display: 'swap' },
+				],
+			},
+		},
 	],
 
   adapter: node({
