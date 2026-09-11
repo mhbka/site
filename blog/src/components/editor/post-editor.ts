@@ -69,7 +69,7 @@ async function initPostEditor() {
 			removeButton.className = 'ui-button tag';
 			removeButton.setAttribute('aria-label', `Remove ${tag} tag`);
 			removeButton.dataset.tag = tag;
-			removeButton.textContent = `${tag} Ã—`;
+			removeButton.textContent = `${tag} ×`;
 			item.append(removeButton);
 			return item;
 		}));

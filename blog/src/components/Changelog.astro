@@ -1,0 +1,19 @@
+---
+import changelog from '../../CHANGELOG.md?raw';
+import { renderMarkdown } from '../lib/markdown.ts';
+
+const renderedContent = await renderMarkdown(changelog);
+const content = renderedContent
+	.replace(/<pre[^>]*>/g, '<pre class="mini-code-block">')
+	.replace(/<code[^>]*>/g, '<code>');
+---
+
+<section class="changelog" aria-label="changelog">
+	<div set:html={content} />
+</section>
+
+<style>
+	.changelog { box-sizing: border-box; max-height: 16rem; margin-top: 1.5rem; padding: 1.5em 1em; overflow-y: auto; overscroll-behavior: contain; background: var(--color-surface); box-shadow: var(--shadow-header); }
+	.changelog :global(h1) { margin: 0 0 0.75rem; color: var(--color-text); font: inherit; font-weight: 700; }
+	.changelog :global(h2) { margin: 1rem 0 0.5rem; color: var(--color-text); font: inherit; font-weight: 400; }
+</style>

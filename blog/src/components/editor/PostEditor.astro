@@ -1,5 +1,6 @@
 ---
 import type { Post } from '../../lib/models/posts.ts';
+import { getPostEditorLabels } from '../../lib/post-editor.ts';
 import Button from '../ui/Button.astro';
 import FormattedDate from '../FormattedDate.astro';
 import Input from '../ui/Input.astro';
@@ -12,11 +13,12 @@ interface Props {
 const { post } = Astro.props;
 const createdAt = post ? new Date(post.createdAt) : undefined;
 const updatedAt = post ? new Date(post.updatedAt) : undefined;
+const labels = getPostEditorLabels(post?.status);
 ---
 
 <form class="post-editor" data-post-editor data-post-id={post?.id} data-initial-tags={JSON.stringify(post?.tags ?? [])}>
 	<header class="post-header">
-		<p class="post-meta">[Draft]</p>
+		<p class="post-meta">{labels.state}</p>
 		<Input id="post-title" class="post-title" name="title" placeholder="Title" required maxlength="200" autocomplete="off" value={post?.title ?? ''} aria-label="Post title" />
 		<div class="post-meta">
 			{createdAt && <div class="post-metadata">created on <FormattedDate date={createdAt} includeTime /></div>}
@@ -41,7 +43,7 @@ const updatedAt = post ? new Date(post.updatedAt) : undefined;
 	</div>
 
 	<div class="editor-actions">
-		<Button type="submit">Save draft</Button>
+		<Button type="submit">{labels.submit}</Button>
 		<p class="editor-status" data-editor-status role="status" aria-live="polite"></p>
 	</div>
 </form>

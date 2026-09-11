@@ -34,7 +34,12 @@ const { posts, variant, isAuthor = false, pageSize = 20 } = Astro.props;
 				</p>
 				{post.tags.length > 0 && <p class="post-card__tags">{post.tags.map((tag) => `#${tag}`).join(' ')}</p>}
 			</Link>
-			{isAuthor && variant === 'published' && <div class="post-list__actions"><MoveToDraftButton postId={post.id} /></div>}
+			{isAuthor && variant === 'published' && (
+				<div class="post-list__actions">
+					<Link class="ui-button" href={`/posts/edit/${post.id}/`}>edit</Link>
+					<MoveToDraftButton postId={post.id} />
+				</div>
+			)}
 			{variant === 'drafts' && (
 				<div class="post-list__actions">
 					<Link class="ui-button" href={`/posts/edit/${post.id}/`}>edit</Link>
@@ -113,10 +118,15 @@ const { posts, variant, isAuthor = false, pageSize = 20 } = Astro.props;
 			if (isAuthor) {
 				const actions = document.createElement('div');
 				actions.className = 'post-list__actions';
+				const editLink = document.createElement('a');
+				editLink.className = 'ui-link ui-button';
+				editLink.href = `/posts/edit/${encodeURIComponent(post.id)}/`;
+				editLink.textContent = 'edit';
+				actions.append(editLink);
 				const button = document.createElement('button');
 				button.className = 'ui-button';
 				button.type = 'button';
-				button.textContent = 'Move to draft';
+				button.textContent = 'move to draft';
 				button.addEventListener('click', () => void moveToDraft(post.id, button));
 				actions.append(button);
 				item.append(actions);

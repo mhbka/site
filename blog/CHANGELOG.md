@@ -1,0 +1,7 @@
+# changelog
+
+## 2026-09-11
+```
+- beginning of the changelog
+- home, me, blog, bash quote picker, and pix pages were here as of this date
+```
