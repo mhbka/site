@@ -1,21 +1,31 @@
-/* Shared Markdown and Milkdown geometry. Theme files own its visual tokens. */
+/* Shared Markdown and Crepe geometry. Theme files own its visual tokens. */
 .markdown-content { color: var(--color-text); }
-.markdown-content :where(h1, h2, h3, h4, h5, h6), .markdown-content .milkdown-theme-nord :where(h1, h2, h3, h4, h5, h6) { margin: 1.5rem 0 0.5rem; color: var(--color-heading); line-height: 1.2; }
-.markdown-content :where(h1), .markdown-content .milkdown-theme-nord :where(h1) { font-size: 2.25em; }
-.markdown-content :where(h2), .markdown-content .milkdown-theme-nord :where(h2) { font-size: 1.65em; }
-.markdown-content :where(h3), .markdown-content .milkdown-theme-nord :where(h3) { font-size: 1.2em; }
-.markdown-content :where(h4), .markdown-content .milkdown-theme-nord :where(h4) { font-size: 1.1em; }
-.markdown-content :where(h5), .markdown-content .milkdown-theme-nord :where(h5) { font-size: 1.05em; }
-.markdown-content :where(h6), .markdown-content .milkdown-theme-nord :where(h6) { font-size: 1em; }
-.markdown-content :where(p, ul, ol, pre, blockquote, table, figure), .markdown-content .milkdown-theme-nord :where(p, ul, ol, pre, blockquote, table, figure) { margin: 0 0 1rem; }
-.markdown-content :where(ul, ol), .markdown-content .milkdown-theme-nord :where(ul, ol) { padding-left: 1.5rem; }
-.markdown-content :where(li + li), .markdown-content .milkdown-theme-nord :where(li + li) { margin-top: 0.125rem; }
-.markdown-content :where(a), .markdown-content .milkdown-theme-nord :where(a) { color: var(--color-accent); }
-.markdown-content :where(img), .markdown-content .milkdown-theme-nord :where(img) { display: block; margin-bottom: 1rem; }
-.markdown-content :where(code), .markdown-content .milkdown-theme-nord :where(code) { padding: 2px 5px; border-radius: var(--radius-code); background-color: var(--color-subtle); }
-.markdown-content :where(pre), .markdown-content .milkdown-theme-nord :where(pre) { padding: 1.5em; border-radius: var(--radius-media); overflow-x: auto; background-color: var(--color-subtle); }
-.markdown-content :where(pre code), .markdown-content .milkdown-theme-nord :where(pre code) { padding: 0; background: var(--color-transparent); }
-.markdown-content :where(blockquote), .markdown-content .milkdown-theme-nord :where(blockquote) { margin-left: 0; padding-left: 1.25rem; border-left: var(--blockquote-border-width) solid var(--color-accent); font-size: 1.333em; }
-.markdown-content :where(table), .markdown-content .milkdown-theme-nord :where(table) { width: 100%; border-collapse: collapse; }
-.markdown-content :where(th, td), .markdown-content .milkdown-theme-nord :where(th, td) { padding: 0.5rem; border: var(--border-width) solid var(--color-subtle); text-align: left; }
-.markdown-content :where(hr), .markdown-content .milkdown-theme-nord :where(hr) { margin: 1.5rem 0; border: 0; border-top: var(--border-width) solid var(--color-subtle); }
+.markdown-content :where(h1, h2, h3, h4, h5, h6), .editor-surface .milkdown .ProseMirror :where(h1, h2, h3, h4, h5, h6) { margin: 1.5rem 0 0.5rem; color: var(--color-heading); font-weight: var(--font-weight-heading); line-height: var(--line-height-heading); }
+.markdown-content :where(h1), .editor-surface .milkdown .ProseMirror :where(h1) { font-size: 2.25em; }
+.markdown-content :where(h2), .editor-surface .milkdown .ProseMirror :where(h2) { font-size: 1.65em; }
+.markdown-content :where(h3), .editor-surface .milkdown .ProseMirror :where(h3) { font-size: 1.2em; }
+.markdown-content :where(h4), .editor-surface .milkdown .ProseMirror :where(h4) { font-size: 1.1em; }
+.markdown-content :where(h5), .editor-surface .milkdown .ProseMirror :where(h5) { font-size: 1.05em; }
+.markdown-content :where(h6), .editor-surface .milkdown .ProseMirror :where(h6) { font-size: 1em; }
+.markdown-content :where(p, ul, ol, pre, blockquote, table, figure), .editor-surface .milkdown .ProseMirror :where(p, ul, ol, pre, blockquote, table, figure) { margin: 0 0 1rem; }
+.editor-surface .milkdown .ProseMirror p { padding: 0; line-height: var(--line-height-body); }
+.markdown-content :where(ul, ol), .editor-surface .milkdown .ProseMirror :where(ul, ol) { padding-left: 1.5rem; }
+.markdown-content :where(li + li), .editor-surface .milkdown .ProseMirror :where(li + li) { margin-top: 0.125rem; }
+.markdown-content :where(a), .editor-surface .milkdown .ProseMirror :where(a) { color: var(--color-accent); }
+.markdown-content :where(img), .editor-surface .milkdown .ProseMirror :where(img) { display: block; margin-bottom: 1rem; }
+.markdown-content :where(code), .editor-surface .milkdown .ProseMirror :where(code) { padding: 2px 5px; border-radius: var(--radius-code); background-color: var(--color-subtle); }
+.markdown-content :where(pre), .editor-surface .milkdown .ProseMirror :where(pre) { padding: 1.5em; border-radius: var(--radius-media); overflow-x: auto; background-color: var(--color-subtle); }
+.markdown-content :where(pre code), .editor-surface .milkdown .ProseMirror :where(pre code) { padding: 0; background: var(--color-transparent); }
+.markdown-content :where(blockquote), .editor-surface .milkdown .ProseMirror :where(blockquote) { margin-left: 0; padding-left: 1.25rem; border-left: var(--blockquote-border-width) solid var(--color-accent); font-size: 1.333em; }
+.markdown-content :where(table), .editor-surface .milkdown .ProseMirror :where(table) { width: 100%; border-collapse: collapse; }
+.markdown-content :where(th, td), .editor-surface .milkdown .ProseMirror :where(th, td) { padding: 0.5rem; border: var(--border-width) solid var(--color-subtle); text-align: left; }
+.markdown-content :where(hr), .editor-surface .milkdown .ProseMirror :where(hr) { margin: 1.5rem 0; border: 0; border-top: var(--border-width) solid var(--color-subtle); }
+
+/* Crepe uses component wrappers where rendered Markdown uses native list markers. */
+.editor-surface .milkdown .milkdown-list-item-block > .list-item > .label-wrapper { color: var(--color-text); }
+.editor-surface .milkdown .milkdown-list-item-block > .list-item > .label-wrapper .label.bullet svg { display: none; }
+.editor-surface .milkdown .milkdown-list-item-block > .list-item > .label-wrapper .label.bullet::after { content: '•'; }
+.editor-surface .milkdown .milkdown-list-item-block > .list-item > .children > .content-dom > p { margin-bottom: 0; }
+.editor-surface .milkdown .milkdown-list-item-block + .milkdown-list-item-block { margin-top: 0.125rem; }
+.editor-surface .milkdown .ProseMirror > ul { padding-left: 0; }
+.editor-surface .milkdown .ProseMirror > ul > .milkdown-list-item-block > .list-item { gap: 0.375rem; }

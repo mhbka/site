@@ -3,5 +3,6 @@
 @import './base/typography.css';
 @import './base/ui.css';
 @import './base/markdown-content.css';
+@import './base/crepe.css';
 @import './base/post-surface.css';
 @import './themes/index.css';

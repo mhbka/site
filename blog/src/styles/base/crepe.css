@@ -1,0 +1,49 @@
+/* Map Crepe's controls and canvas to the active site theme. */
+.editor-surface .milkdown {
+	--crepe-color-background: var(--color-surface);
+	--crepe-color-on-background: var(--color-text);
+	--crepe-color-surface: var(--color-surface);
+	--crepe-color-surface-low: var(--color-subtle);
+	--crepe-color-on-surface: var(--color-text);
+	--crepe-color-on-surface-variant: var(--color-muted);
+	--crepe-color-outline: var(--color-muted);
+	--crepe-color-primary: var(--color-accent);
+	--crepe-color-secondary: var(--color-subtle);
+	--crepe-color-on-secondary: var(--color-text);
+	--crepe-color-inverse: var(--color-text);
+	--crepe-color-on-inverse: var(--color-page-background);
+	--crepe-color-inline-code: var(--color-heading);
+	--crepe-color-error: var(--color-danger);
+	--crepe-color-hover: var(--color-subtle);
+	--crepe-color-selected: var(--color-subtle);
+	--crepe-color-inline-area: var(--color-subtle);
+	--crepe-base-font-size: 1em;
+	--crepe-font-title: var(--font-body);
+	--crepe-font-default: var(--font-body);
+	--crepe-font-code: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+	--crepe-shadow-1: var(--shadow-page);
+	--crepe-shadow-2: var(--shadow-page);
+}
+
+.editor-surface {
+	background: var(--color-surface);
+}
+
+.editor-surface .milkdown .ProseMirror {
+	min-height: 24rem;
+	padding: 2.5rem 0;
+}
+
+.editor-surface .milkdown :is(.milkdown-toolbar, .milkdown-slash-menu, .milkdown-link-preview > .link-preview, .milkdown-link-edit > .link-edit) {
+	border: var(--border-width) solid var(--color-muted);
+}
+
+.editor-surface .milkdown :is(.milkdown-toolbar, .milkdown-slash-menu) {
+	border-radius: var(--radius-control);
+}
+
+@media (max-width: 40rem) {
+	.editor-surface .milkdown .ProseMirror {
+		padding: 1.5rem 0;
+	}
+}

@@ -1,28 +1,17 @@
-import { Editor, defaultValueCtx, rootCtx } from '@milkdown/kit/core';
-import { commonmark } from '@milkdown/kit/preset/commonmark';
-import { gfm } from '@milkdown/kit/preset/gfm';
-import { block } from '@milkdown/kit/plugin/block';
-import { clipboard } from '@milkdown/kit/plugin/clipboard';
-import { history as historyPlugin } from '@milkdown/kit/plugin/history';
-import { indent } from '@milkdown/kit/plugin/indent';
-import { upload } from '@milkdown/kit/plugin/upload';
-import { getMarkdown } from '@milkdown/kit/utils';
-import { nord } from '@milkdown/theme-nord';
+import { Crepe } from '@milkdown/crepe';
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/nord.css';
 
 import { blogApi } from '../../lib/api.ts';
 import { createSupabaseBrowserClient } from '../../lib/auth/supabase.ts';
 import { uploadImage } from '../../lib/image-upload.ts';
 import { addTag, normalizeTag } from '../../lib/tags.ts';
-import { imageSelectionPlugin } from './plugins/image-selection.ts';
-import { imageUploadPlugin } from './plugins/image-upload.ts';
 import { markdownLinkBackspacePlugin, markdownLinkInputRule } from './plugins/markdown-link.ts';
 
 /** Initializes the Milkdown editor and its post form controls. */
 async function initPostEditor() {
 	const form = document.querySelector<HTMLFormElement>('[data-post-editor]');
 	const root = document.querySelector<HTMLElement>('#post-content');
-	const editorSurface = document.querySelector<HTMLElement>('[data-editor-surface]');
-	const contentPlaceholder = document.querySelector<HTMLElement>('[data-content-placeholder]');
 	const title = document.querySelector<HTMLInputElement>('#post-title');
 	const slug = document.querySelector<HTMLInputElement>('#post-slug');
 	const tagsInput = document.querySelector<HTMLInputElement>('#post-tags');
@@ -31,12 +20,10 @@ async function initPostEditor() {
 	const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
 	const status = document.querySelector<HTMLElement>('[data-editor-status]');
 
-	if (!form || !root || !editorSurface || !contentPlaceholder || !title || !slug || !tagsInput || !tagList || !button || !status) {
+	if (!form || !root || !title || !slug || !tagsInput || !tagList || !button || !status) {
 		throw new Error('Post editor is missing required elements.');
 	}
 
-	const editorRoot = root;
-	const placeholder = contentPlaceholder;
 	const slugInput = slug;
 	const selectedTagsInput = tagsInput;
 	const selectedTagList = tagList;
@@ -128,39 +115,30 @@ async function initPostEditor() {
 		tagsInput.focus();
 	});
 
-	const editor = await Editor.make()
-		.config((ctx) => {
-			nord(ctx);
-			ctx.set(rootCtx, root);
-			ctx.set(defaultValueCtx, root.dataset.initialContent ?? '');
-		})
-		.use(commonmark)
-		.use(gfm)
+	// Crepe provides the standard editing controls while preserving Markdown output.
+	const editor = new Crepe({
+		root,
+		defaultValue: root.dataset.initialContent ?? '',
+		featureConfigs: {
+			[Crepe.Feature.ImageBlock]: {
+				onUpload: uploadImageFile,
+			},
+			[Crepe.Feature.Placeholder]: {
+				text: 'Content',
+				mode: 'doc',
+			},
+		},
+	});
+
+	editor.editor
 		.use(markdownLinkInputRule)
-		.use(markdownLinkBackspacePlugin)
-		.use(historyPlugin)
-		.use(clipboard)
-		.use(indent)
-		.use(block)
-		.use(upload)
-		.use(imageUploadPlugin(uploadImageFile))
-		.use(imageSelectionPlugin)
-		.create();
-
-	/** Shows the content hint only while the editor is empty. */
-	function syncContentPlaceholder() {
-		const documentContent = editorRoot.querySelector<HTMLElement>('.ProseMirror');
-		placeholder.hidden = Boolean(documentContent?.textContent?.trim() || documentContent?.querySelector('img'));
-	}
-
-	root.addEventListener('input', syncContentPlaceholder);
-	new MutationObserver(syncContentPlaceholder).observe(root, { childList: true, characterData: true, subtree: true });
-	syncContentPlaceholder();
+		.use(markdownLinkBackspacePlugin);
+	await editor.create();
 
 	form.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		commitTag();
-		const contentMd = editor.action(getMarkdown()).trim();
+		const contentMd = editor.getMarkdown().trim();
 		const postTitle = title.value.trim();
 		const postSlug = slug.value.trim();
 

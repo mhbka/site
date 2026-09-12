@@ -9,7 +9,7 @@ body {
 	color: var(--color-text);
 	font-family: var(--font-body);
 	font-size: 20px;
-	line-height: 1.7;
+	line-height: var(--line-height-body);
 }
 
 .site-layout { display: grid; grid-template-columns: minmax(0, 1fr) 40vw minmax(0, 1fr); padding: 2rem 1rem; }

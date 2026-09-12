@@ -39,7 +39,6 @@ const labels = getPostEditorLabels(post?.status);
 
 	<div class="editor-surface" data-editor-surface>
 		<div id="post-content" class="markdown-content" aria-label="Post content" data-initial-content={post?.contentMd ?? ''}></div>
-		<p class="content-placeholder" data-content-placeholder>Content</p>
 	</div>
 
 	<div class="editor-actions">
@@ -58,8 +57,7 @@ const labels = getPostEditorLabels(post?.status);
 		gap: 1rem;
 	}
 	:global(.post-title)::placeholder,
-	.tag-input :global(.ui-input)::placeholder,
-	.content-placeholder {
+	.tag-input :global(.ui-input)::placeholder {
 		color: var(--color-muted);
 		opacity: 1;
 	}
@@ -105,7 +103,6 @@ const labels = getPostEditorLabels(post?.status);
 		position: relative;
 		min-height: 24rem;
 		border-radius: var(--radius-focus);
-		overflow: hidden;
 	}
 	.editor-surface :global(.milkdown) {
 		min-height: 24rem;
@@ -125,13 +122,6 @@ const labels = getPostEditorLabels(post?.status);
 	.post-settings summary { cursor: pointer; }
 	.post-settings :global(.ui-input) { display: block; margin-top: 0.75rem; }
 	.post-settings :global(.ui-input) { width: 100%; }
-	.content-placeholder {
-		position: absolute;
-		top: 0;
-		left: 0;
-		margin: 0;
-		pointer-events: none;
-	}
 	.editor-help,
 	.editor-status {
 		margin: 0;

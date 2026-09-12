@@ -1,4 +1,10 @@
-h1, h2, h3, h4, h5, h6 { margin: 0; color: var(--color-heading); line-height: 1.2; }
+:root {
+	--line-height-body: 1.7;
+	--line-height-heading: 1.2;
+	--font-weight-heading: 700;
+}
+
+h1, h2, h3, h4, h5, h6 { margin: 0; color: var(--color-heading); font-weight: var(--font-weight-heading); line-height: var(--line-height-heading); }
 h1 { font-size: 3.052em; } h2 { font-size: 2.441em; } h3 { font-size: 1.953em; } h4 { font-size: 1.563em; } h5 { font-size: 1.25em; }
 strong, b { font-weight: 700; }
 a { color: var(--color-accent); }
