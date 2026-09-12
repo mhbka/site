@@ -1,5 +1,10 @@
 # (functional) changelog
 
+## 2026-09-12
+```
+- moved from base Milkdown to crepe editor (you won't see it though)
+```
+
 ## 2026-09-11
 ```
 - beginning of the changelog

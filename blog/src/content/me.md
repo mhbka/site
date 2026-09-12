@@ -8,6 +8,8 @@ I'm situated in, and am a citizen of the sunny land of [Singapore](https://en.wi
 
 ## interests
 
+![alyce](/images/alyce.png)
+
 I'm a big fan of [Rust](https://rust-lang.org/), and OK with most strictly typed languages.
 I know enough backend/frontend/etc, and am trying to pick up other things like graphics.
 I'm also interested in working on something lower-level in the future (in Rust).
@@ -18,8 +20,6 @@ and spend a lot of time on the sim in public servers on [Assetto Corsa](https://
 I play [osu!](https://osu.ppy.sh/) and used to be a pretty OK [beatmapper](https://osu.ppy.sh/wiki/en/Beatmapping). 
 However, I'm no longer involved in the community and only play offline these days.
 I might write about beatmapping once in a while though.
-
-![alyce](/images/alyce.png)
 
 In a past life, I was fortunate to have been there for the golden ages of [Overwatch](https://www.youtube.com/watch?v=KjMJQQdUJvY) where I peaked 3.8k on Zarya/Roadhog,
 and [Fortnite](https://www.youtube.com/watch?v=e4-RaJGGFP4) where I didn't peak anywhere because I was quite bad.

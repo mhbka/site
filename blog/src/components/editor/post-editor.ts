@@ -6,7 +6,6 @@ import { blogApi } from '../../lib/api.ts';
 import { createSupabaseBrowserClient } from '../../lib/auth/supabase.ts';
 import { uploadImage } from '../../lib/image-upload.ts';
 import { addTag, normalizeTag } from '../../lib/tags.ts';
-import { markdownLinkBackspacePlugin, markdownLinkInputRule } from './plugins/markdown-link.ts';
 
 /** Initializes the Milkdown editor and its post form controls. */
 async function initPostEditor() {
@@ -131,8 +130,7 @@ async function initPostEditor() {
 	});
 
 	editor.editor
-		.use(markdownLinkInputRule)
-		.use(markdownLinkBackspacePlugin);
+		.use(markdownLinkInputRule);
 	await editor.create();
 
 	form.addEventListener('submit', async (event) => {
