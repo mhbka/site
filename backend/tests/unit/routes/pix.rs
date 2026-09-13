@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::models::pix::PixPage;
 
-use super::CreateUploadResponse;
+use super::{normalize_tags, CreateUploadResponse, TagOperation, UpdateTagsRequest};
 
 #[test]
 fn serializes_upload_response_as_camel_case() {
@@ -34,6 +34,28 @@ fn serializes_pix_page_pagination_state_as_camel_case() {
     assert_eq!(
         serde_json::to_value(page).unwrap(),
         serde_json::json!({ "images": [], "nextBefore": null, "hasMore": false })
+    );
+}
+
+#[test]
+fn deserializes_bulk_tag_update_request() {
+    let request: UpdateTagsRequest = serde_json::from_value(serde_json::json!({
+        "imageIds": [Uuid::nil()],
+        "operation": "add",
+        "tags": ["cats"]
+    }))
+    .unwrap();
+
+    assert_eq!(request.image_ids, vec![Uuid::nil()]);
+    assert!(matches!(request.operation, TagOperation::Add));
+    assert_eq!(request.tags, vec!["cats"]);
+}
+
+#[test]
+fn normalizes_bulk_tag_update_tags() {
+    assert_eq!(
+        normalize_tags(vec![" Cats ".into(), "cats".into(), "".into()]),
+        vec!["cats"]
     );
 }
 

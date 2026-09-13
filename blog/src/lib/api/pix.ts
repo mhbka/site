@@ -1,5 +1,5 @@
 import type { ApiRequest } from '../models/api.ts';
-import type { Pix, PixPage, PixUpload } from '../models/pix.ts';
+import type { Pix, PixPage, PixTagUpdate, PixUpload } from '../models/pix.ts';
 
 /** Creates requests for browsing and uploading pix images. */
 export function createPixApi(request: ApiRequest, upload: typeof globalThis.fetch = globalThis.fetch) {
@@ -12,6 +12,8 @@ export function createPixApi(request: ApiRequest, upload: typeof globalThis.fetc
 			return request<PixPage>(`/pix?${query}`);
 		},
 		listPixTags: () => request<Array<{ tag: string; count: number }>>('/pix/tags'),
+		updatePixTags: (imageIds: string[], operation: 'add' | 'remove' | 'overwrite', tags: string[], token: string) =>
+			request<PixTagUpdate[]>('/pix/tags', { method: 'PATCH', body: JSON.stringify({ imageIds, operation, tags }) }, token),
 		createPixUpload: (contentType: string, tags: string[], token: string) =>
 			request<PixUpload>('/pix/uploads', { method: 'POST', body: JSON.stringify({ contentType, tags }) }, token),
 		completePixUpload: (id: string, token: string) =>

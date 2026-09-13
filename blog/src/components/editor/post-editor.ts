@@ -129,8 +129,6 @@ async function initPostEditor() {
 		},
 	});
 
-	editor.editor
-		.use(markdownLinkInputRule);
 	await editor.create();
 
 	form.addEventListener('submit', async (event) => {

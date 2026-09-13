@@ -19,3 +19,9 @@ export interface PixUpload {
 	uploadUrl: string;
 	publicUrl: string;
 }
+
+/** Represents the changed tags returned after a bulk Pix update. */
+export interface PixTagUpdate {
+	id: string;
+	tags: string[];
+}

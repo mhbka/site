@@ -1,5 +1,10 @@
 # (functional) changelog
 
+## 2026-09-13
+```
+- added tags editing to pix page (you won't see it)
+```
+
 ## 2026-09-12
 ```
 - moved from base Milkdown to crepe editor (you won't see it though)

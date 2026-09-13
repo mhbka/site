@@ -24,7 +24,7 @@ const MAX_PAGE_SIZE: i64 = 100;
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_images))
-        .route("/tags", get(list_tags))
+        .route("/tags", get(list_tags).patch(update_tags))
         .route("/uploads", post(create_upload))
         .route("/uploads/{id}/complete", post(complete_upload))
 }
@@ -74,6 +74,32 @@ async fn list_images(
 #[serde(rename_all = "camelCase")]
 struct CreateUploadRequest {
     content_type: String,
+    tags: Vec<String>,
+}
+
+/// Describes one bulk tag operation for completed Pix images.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateTagsRequest {
+    image_ids: Vec<Uuid>,
+    operation: TagOperation,
+    tags: Vec<String>,
+}
+
+/// Selects how the supplied tags change an image's current tags.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum TagOperation {
+    Add,
+    Remove,
+    Overwrite,
+}
+
+/// Returns the changed tags for a single Pix image.
+#[derive(Debug, Serialize, sqlx::FromRow)]
+#[serde(rename_all = "camelCase")]
+struct UpdatedPixTags {
+    id: Uuid,
     tags: Vec<String>,
 }
 
@@ -170,6 +196,67 @@ async fn complete_upload(
     .await?;
     tracing::info!(image_id = %image.id, user_id = %user.id, "Pix upload completed");
     Ok(Json(image))
+}
+
+/// Applies one tag operation to a batch of completed Pix images.
+async fn update_tags(
+    State(app_state): State<AppState>,
+    user: AuthUser,
+    Json(request): Json<UpdateTagsRequest>,
+) -> RouteResult<Json<Vec<UpdatedPixTags>>> {
+    if !is_pix(&app_state.pool, user.id).await? {
+        tracing::info!(user_id = %user.id, "Pix tag update denied for user without access");
+        return Err(RouteError::forbidden("pix access required"));
+    }
+    if request.image_ids.is_empty() {
+        return Err(RouteError::bad_request("select at least one image"));
+    }
+    if request.image_ids.len() > 200 {
+        return Err(RouteError::bad_request("too many images selected"));
+    }
+    let tags = normalize_tags(request.tags);
+    if tags.is_empty() {
+        return Err(RouteError::bad_request("at least one tag is required"));
+    }
+
+    let operation = match request.operation {
+        TagOperation::Add => "add",
+        TagOperation::Remove => "remove",
+        TagOperation::Overwrite => "overwrite",
+    };
+    let images = sqlx::query_as::<_, UpdatedPixTags>(
+        "update pix
+         set tags = case $2
+             when 'add' then array(select distinct tag from unnest(tags || $3::text[]) as tag order by tag)
+             when 'remove' then array(select tag from unnest(tags) as tag where not (tag = any($3::text[])) order by tag)
+             when 'overwrite' then array(select distinct tag from unnest($3::text[]) as tag order by tag)
+         end
+         where id = any($1) and uploaded_at is not null
+         returning id, tags",
+    )
+    .bind(&request.image_ids)
+    .bind(operation)
+    .bind(&tags)
+    .fetch_all(&app_state.pool)
+    .await?;
+    tracing::info!(image_count = images.len(), user_id = %user.id, operation, "Pix tags updated");
+    Ok(Json(images))
+}
+
+/// Normalizes tags before they are stored by a tag edit operation.
+fn normalize_tags(tags: Vec<String>) -> Vec<String> {
+    let mut normalized = Vec::new();
+    for tag in tags {
+        let tag: String = tag
+            .to_lowercase()
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .collect();
+        if !tag.is_empty() && !normalized.contains(&tag) {
+            normalized.push(tag);
+        }
+    }
+    normalized
 }
 
 /// Returns the tags used by completed Pix images.

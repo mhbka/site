@@ -2,6 +2,7 @@
 import type { Pix } from '../../lib/models/pix.ts';
 import Button from '../ui/Button.astro';
 import Input from '../ui/Input.astro';
+import Select from '../ui/Select.astro';
 import TagInput from '../TagInput.astro';
 
 interface Props {
@@ -16,7 +17,7 @@ interface Props {
 const { images, nextBefore, hasMore, tag, isPix, accessToken } = Astro.props;
 ---
 
-<section class="moe-gallery" data-moe-gallery data-next-before={nextBefore ?? ''} data-has-more={hasMore ? 'true' : 'false'} data-tag={tag ?? ''} data-token={accessToken ?? ''}>
+<section class="moe-gallery" data-moe-gallery data-next-before={nextBefore ?? ''} data-has-more={hasMore ? 'true' : 'false'} data-tag={tag ?? ''} data-token={accessToken ?? ''} data-can-edit={isPix ? 'true' : 'false'}>
 	{isPix && (
 		<div class="moe-upload" data-moe-upload>
 			<label class="moe-dropzone" for="moe-image" data-moe-dropzone>
@@ -24,13 +25,24 @@ const { images, nextBefore, hasMore, tag, isPix, accessToken } = Astro.props;
 			</label>
 			<Input class="moe-file-input" id="moe-image" name="images" type="file" accept="image/avif,image/gif,image/jpeg,image/png,image/webp" multiple />
 			<TagInput id="pix-tags" name="tags" label="tags" />
+			<Button class="moe-select-toggle" type="button" data-moe-select-toggle aria-pressed="false">select images</Button>
+			<div class="moe-tag-editor" data-moe-tag-editor hidden>
+				<span data-moe-selected-count></span>
+				<Select data-moe-tag-operation aria-label="tag operation">
+					<option value="remove">delete</option>
+					<option value="add">add</option>
+					<option value="overwrite">overwrite</option>
+				</Select>
+				<Button type="button" data-moe-tag-save>save</Button>
+			</div>
 			<p class="moe-status" data-moe-status role="status"></p>
 		</div>
 	)}
 	<div class="moe-grid" data-moe-grid>
 		{images.map((image) => (
-			<Button class="moe-thumbnail" type="button" data-image-url={image.publicUrl} data-image-tags={JSON.stringify(image.tags)} data-image-created-at={image.createdAt} aria-label="view full image">
+			<Button class="moe-thumbnail" type="button" data-image-id={image.id} data-image-url={image.publicUrl} data-image-tags={JSON.stringify(image.tags)} data-image-created-at={image.createdAt} aria-label="view full image">
 				<img src={image.publicUrl} alt="" loading="lazy" />
+				<span class="moe-thumbnail__tick" aria-hidden="true">✓</span>
 			</Button>
 		))}
 	</div>
@@ -62,10 +74,14 @@ const { images, nextBefore, hasMore, tag, isPix, accessToken } = Astro.props;
 	.moe-dropzone:hover, .moe-dropzone.is-dragging, .moe-upload[aria-busy="true"] .moe-dropzone { border-color: var(--color-accent); background: var(--color-page-background); }
 	.moe-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
 	.moe-status { min-height: 1lh; margin: 0; }
+	.moe-tag-editor { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+	.moe-tag-editor[hidden] { display: none; }
 	.moe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0.75rem; }
 	.moe-load-more[hidden] { display: none; }
-	.moe-thumbnail { display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; background: var(--color-subtle); }
-	.moe-thumbnail img { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
+	:global(.moe-thumbnail) { position: relative; display: block; width: 100%; aspect-ratio: 1; padding: 0; overflow: hidden; background: var(--color-subtle); }
+	:global(.moe-thumbnail img) { display: block; width: 100%; height: 100%; border-radius: 0; object-fit: cover; }
+	:global(.moe-thumbnail__tick) { position: absolute; top: 0.45rem; right: 0.45rem; display: none; width: 1.5rem; height: 1.5rem; place-content: center; border-radius: 50%; background: var(--color-success); color: var(--color-surface); font-weight: bold; }
+	:global(.moe-thumbnail.is-selected .moe-thumbnail__tick) { display: grid; }
 	.moe-portal { position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%); max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); padding: 0; border: 0; background: transparent; box-shadow: none; overflow: hidden; }
 	.moe-portal::backdrop { background: var(--color-overlay); }
 	.moe-portal img { display: block; max-width: calc(100vw - 2rem); max-height: calc(100vh - 2rem); max-height: calc(100dvh - 2rem); object-fit: contain; }

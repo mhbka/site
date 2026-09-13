@@ -178,6 +178,23 @@ test('lists pix and requests uploads with the current user token', async () => {
 	assert.equal(new Headers(uploadMock.calls[0][1]?.headers).get('Authorization'), 'Bearer access-token');
 });
 
+test('sends authenticated Pix tag updates with the selected operation', async () => {
+	const mock = createFetch(Response.json([{ id: 'image-1', tags: ['cats'] }]));
+	const api = createBlogApi({ baseUrl: 'https://api.example.test', fetch: mock.fetch });
+
+	await api.updatePixTags(['image-1'], 'add', ['cats'], 'access-token');
+
+	const [url, options] = mock.calls[0];
+	assert.equal(url, 'https://api.example.test/pix/tags');
+	assert.equal(options?.method, 'PATCH');
+	assert.equal(new Headers(options?.headers).get('Authorization'), 'Bearer access-token');
+	assert.deepEqual(JSON.parse(String(options?.body)), {
+		imageIds: ['image-1'],
+		operation: 'add',
+		tags: ['cats'],
+	});
+});
+
 test('uploads pix through its prepared upload URL and completes it', async () => {
 	const mock = createFetchSequence([
 		Response.json({ imageId: 'image/id', uploadUrl: 'https://uploads.example.test/image' }),
